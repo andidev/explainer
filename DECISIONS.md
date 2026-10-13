@@ -303,7 +303,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `EDGE_ZONE`, `nearDot`.
 
 ### D-034: Auto-capitalise, on by default
-- Status: Active
+- Status: Amended by D-056
 - Date: 2026-10-13
 - Decision: A switch capitalises the first letter typed at the start of a box, of a new line, and
   after `.`, `!` or `?`. Also sets `autocapitalize` for on-screen keyboards.
@@ -531,3 +531,22 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   header keeps room for it so the tools never run underneath.
 - Why: User asked for a GitHub link in the top right corner.
 - Code: `.gh` link in `header`, header right padding.
+
+### D-056: Capitals: All caps (default), Sentence case, As typed
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-034
+- Decision: The former Auto-capitalise switch is a button that cycles through three modes, showing
+  the current one: **All caps** (the default) → **Sentence case** → **As typed**. All caps shows
+  all box text in capitals as display only: the text is stored as typed, so switching back
+  restores it. Sentence case is D-034's behaviour (a capital starts the box, each line and each
+  sentence). That capitalising while typing also stays on in All caps, so the text reads well if
+  you switch; As typed turns it off. When a mode makes text wider, boxes grow to fit as one undo
+  step. In All caps, copied boxes paste into other apps in capitals. Someone who had turned
+  Auto-capitalise off keeps As typed; everyone else starts in All caps. The mode travels in share
+  links (setting `c`: 0 As typed, 1 Sentence case, 2 All caps; older links still load). The
+  example board's boxes are sized to fit in capitals.
+- Why: User asked for an all-capitals option, on by default, with the capitalise button
+  toggling all three modes.
+- Code: `capMode`, `setCap`, `CAPS`, `body.caps .txt` (text-transform), `readText` (reads with
+  the transform off), `clipText`, `currentSettings`/`applySettings`, `explainer.capmode`, `sample`.

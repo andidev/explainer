@@ -37,7 +37,8 @@ of the way.
 
 **Draw.** Drag on empty space, or double-click it, and a box appears with the cursor already in it.
 Text stays centred and wraps. When the box fills up it grows by half again, so you never stop to
-resize.
+resize. Text shows in capitals by default; the **All caps** button switches to **Sentence case**
+(a capital starts each sentence) or **As typed**, and your text is kept as you typed it.
 
 **Connect.** Move toward the edge of a box and the nearest connection dot appears. Drag it onto
 another box. Lines find their own way around other boxes, and you can choose angled or curved lines.
