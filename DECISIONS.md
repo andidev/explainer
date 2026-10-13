@@ -459,3 +459,18 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Why: User reported no hand on the draggable part of a box being edited, and a hand where a
   press would create a line.
 - Code: `nearDot` toggles `#viewport.linking`; CSS `.box`, `.box.editing .txt`, `#viewport.linking`.
+
+### D-051: Cmd/Ctrl+click a box to draw an arrow to it
+- Status: Active
+- Date: 2026-10-13
+- Decision: With a box selected or being edited, Cmd+click (Mac) or Ctrl+click (Windows/Linux)
+  on another box draws an arrow from the selected box to it (from every selected box, if several
+  are selected; from the edited box while editing). The arrow joins the sides that face each
+  other, uses the current line style, and is one undo step. Editing stops, and the clicked box
+  becomes the selection, so repeated Cmd/Ctrl+clicks build a chain. A pair that is already
+  connected in that direction is not doubled ("Already connected"). While Cmd/Ctrl is held over
+  a box that would be connected, the cursor is the crosshair (D-050). Cmd/Ctrl+double-click on
+  a box does not start editing.
+- Why: User asked for a quick way to connect boxes from the keyboard and mouse.
+- Code: `linkSources`, `facing`, `connectTo`, viewport `pointerdown`, `nearDot`, `modCursor`,
+  `dblclick`; shortcuts panel; README table.

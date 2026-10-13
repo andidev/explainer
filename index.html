@@ -196,6 +196,7 @@ body.help-open #helpBtn{display:none}
     <dt>Double-click a dot, drag</dt><dd>Line, no arrow</dd>
     <dt>Scroll · <kbd>Space</kbd>+drag</dt><dd>Pan</dd>
     <dt><kbd class="mod">Ctrl</kbd>+scroll</dt><dd>Zoom</dd>
+    <dt><kbd class="mod">Ctrl</kbd>+click a box</dt><dd>Arrow from the selected box</dd>
     <dt><kbd class="mod">Ctrl</kbd> <kbd>A</kbd></dt><dd>Select all</dd>
     <dt><kbd>⌫</kbd> · <kbd>Del</kbd></dt><dd>Delete selected</dd>
     <dt><kbd>⌫</kbd> in an empty box</dt><dd>Delete the box</dd>
@@ -807,6 +808,8 @@ viewport.addEventListener('pointerdown', e => {
   if (e.button === 1 || e.button === 2 || (spaceDown && e.button === 0)) return startPan(e);
   if (e.button !== 0) return;
   const h = e.target.closest('.h'), bx = e.target.closest('.box'), hit = e.target.closest('.hit');
+  // Cmd/Ctrl+click another box connects the selected (or edited) box to it
+  if (bx && (e.metaKey || e.ctrlKey) && !e.shiftKey && linkSources(+bx.dataset.id).length){ e.preventDefault(); return connectTo(+bx.dataset.id); }
   // A visible dot wins: pressing and dragging near it always draws a line
   if (!e.shiftKey && e.pointerType !== 'touch'){
     nearDot(e);
@@ -828,6 +831,29 @@ window.addEventListener('pointermove', e => {
   if (gesture && e.pointerType === 'mouse' && e.buttons === 0){ endGesture(e); return; }
   if (gesture) gesture.move(e); else nearDot(e);
 });
+// Boxes a Cmd/Ctrl+click on box `tid` would connect from: the box being edited, else the selection
+function linkSources(tid){ return (editing != null ? [editing] : [...sel.boxes]).filter(i => i !== tid && box(i)); }
+// Sides that face each other: left/right if the boxes are further apart across than down, else top/bottom
+function facing(a, b){
+  const gx = Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w)), gy = Math.max(b.y - (a.y + a.h), a.y - (b.y + b.h));
+  const dx = (b.x + b.w/2) - (a.x + a.w/2), dy = (b.y + b.h/2) - (a.y + a.h/2);
+  return gx >= gy ? (dx >= 0 ? ['e', 'w'] : ['w', 'e']) : (dy >= 0 ? ['s', 'n'] : ['n', 's']);
+}
+// Draw an arrow from each source box to `tid`, then select `tid` so the next Cmd/Ctrl+click continues the chain
+function connectTo(tid){
+  const srcs = linkSources(tid);
+  if (editing) endEdit();
+  focusBoard(); armed = null;
+  let n = 0;
+  for (const sid of srcs){
+    if (state.links.some(l => l.from === sid && l.to === tid)) continue;
+    const [fa, ta] = facing(box(sid), box(tid));
+    state.links.push({ id: state.nextId++, from:sid, fa, to:tid, ta, arrow:true, curve: lineStyle === 'curved' }); n++;
+  }
+  setSel([tid]); lastSelectedId = tid;
+  renderAll(); commit();
+  if (!n) toast(srcs.length > 1 ? 'Those boxes already point here' : 'Already connected');
+}
 // A press counts as "on the dot" if it is right on it, or just outside the box; otherwise it belongs to the box
 function onDot(e, id, k){
   const b = box(id), r = viewport.getBoundingClientRect(), q = anchorPt(b, k);
@@ -867,7 +893,8 @@ function nearDot(e){
   }
   if (!found) nearLink = null;
   if (found !== nearEl){ nearEl && nearEl.classList.remove('near'); found && found.classList.add('near'); nearEl = found; }
-  viewport.classList.toggle('linking', !!found && !e.shiftKey);
+  const ou = (e.metaKey || e.ctrlKey) && !e.shiftKey && document.elementFromPoint(e.clientX, e.clientY), over = ou && ou.closest('.box');
+  viewport.classList.toggle('linking', (!!found || !!(over && linkSources(+over.dataset.id).length)) && !e.shiftKey);
 }
 function endGesture(e){ if (!gesture) return; const g = gesture; gesture = null; try { g.up(e); } finally { cleanupGesture(); } }
 function cancelGesture(){ if (!gesture) return; const g = gesture; gesture = null; try { g.cancel && g.cancel(); } finally { cleanupGesture(); } }
@@ -1040,7 +1067,7 @@ viewport.addEventListener('dblclick', e => {
   const under = document.elementFromPoint(e.clientX, e.clientY) || e.target;
   const bx = under.closest('.box'), h = under.closest('.h');
   if (!bx){ if (!under.closest('.hit') && !under.closest('header, #help, #helpBtn') && !spaceDown){ e.preventDefault(); newBoxAt(pt(e), sizeFor(e)); } return; }
-  if (e.shiftKey) return;
+  if (e.shiftKey || e.metaKey || e.ctrlKey) return; // Cmd/Ctrl+click connects; a quick second click must not start editing
   if (h && onDot(e, +bx.dataset.id, h.dataset.a)) return; // double-click on the dot itself = line without arrow
   e.preventDefault(); selectAllText(box(+bx.dataset.id));
 });
@@ -1127,6 +1154,11 @@ window.addEventListener('keydown', e => {
   else if (e.altKey && e.key === 'ArrowRight'){ e.preventDefault(); goPlace(1); }
   else if (e.key === 'Escape'){ setSel(); armed = null; renderSel(); }
 });
+// Pressing or releasing Cmd/Ctrl updates the cursor without waiting for the mouse to move
+function modCursor(e){ if ((e.key === 'Meta' || e.key === 'Control') && lastEv && !gesture)
+  nearDot({ clientX: lastEv.clientX, clientY: lastEv.clientY, pointerType: lastEv.pointerType, shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey }); }
+window.addEventListener('keydown', modCursor);
+window.addEventListener('keyup', modCursor);
 window.addEventListener('keyup', e => { if (e.key === ' '){ spaceDown = false; viewport.classList.remove('space'); } });
 window.addEventListener('blur', () => { spaceDown = false; viewport.classList.remove('space'); });
 
