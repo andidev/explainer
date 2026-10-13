@@ -199,6 +199,7 @@ body.gesturing #selbar{display:none}
   .no-phone{display:none!important}
   #exampleTag{display:none!important}
   #islPins{left:12px;right:12px;transform:none;max-width:none}
+  body.help-open #islPins{right:286px} /* keep clear of the open shortcuts panel */
   #islTC .lbl-txt{display:none}
 }
 /* Welcome on an empty board: it lets presses through to the board, except on its items */
@@ -424,7 +425,7 @@ function unpack(str){
   return { nextId: a[1], example: false, settings: a[4] && typeof a[4] === 'object' ? a[4] : null,
     boxes: a[2].map(([id, x, y, w, h, text]) => ({ id, x, y, w, h, text: String(text) })),
     links: a[3].filter(l => A[l[2]] && A[l[4]]).map(([id, from, fa, to, ta, ar, cv]) => ({ id, from, fa, to, ta, arrow: !!ar, back: ar === 2, curve: !!cv })),
-    pins: Array.isArray(a[5]) ? a[5].filter(p => Array.isArray(p) && isFinite(p[1]) && isFinite(p[2])).map(([id, x, y, name, c]) => ({ id, x, y, name: String(name || 'Pin'), c: ((c|0) % 8 + 8) % 8 })) : [] };
+    pins: Array.isArray(a[5]) ? a[5].filter(p => Array.isArray(p) && Number.isInteger(p[0]) && isFinite(p[1]) && isFinite(p[2])).map(([id, x, y, name, c]) => ({ id, x, y, name: String(name || 'Pin').slice(0, 60), c: ((c|0) % 8 + 8) % 8 })) : [] };
 }
 const b64u = bytes => { let s = ''; for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
 const unb64u = t => { const s = atob(t.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - t.length % 4) % 4)); return Uint8Array.from(s, c => c.charCodeAt(0)); };
@@ -762,6 +763,7 @@ function jumpToPin(id){
 // A press on a marker: a click jumps to it (Task 3 adds dragging, Task 2 adds the right-click menu)
 function downPin(e, id){
   if (e.button !== 0) return;
+  if (editing) endEdit();
   const sx = e.clientX, sy = e.clientY; let moved = false;
   gesture = { move(ev){ if (Math.hypot(ev.clientX - sx, ev.clientY - sy) > 4) moved = true; },
     up(){ if (!moved) jumpToPin(id); }, cancel(){} };
@@ -828,7 +830,8 @@ function positionSelbar(){
   }
   const h = bar.offsetHeight || 40, w = bar.offsetWidth || 200, gap = 12, top = matchMedia('(max-width: 860px)').matches ? 112 : 64; // keep clear of the top islands
   let y = r.t - h - gap; if (y < top) y = r.b + gap;                          // no room above: go below
-  y = Math.max(top, Math.min(y, innerHeight - h - 64));
+  const pb = $('islPins'), lim = Math.min(innerHeight - h - 64, pb ? pb.getBoundingClientRect().top - h - 8 : Infinity); // stay clear of the pin bar
+  y = Math.max(top, Math.min(y, lim));
   const x = Math.max(w/2 + 8, Math.min(innerWidth - w/2 - 8, (r.l + r.r)/2));
   bar.style.left = x + 'px'; bar.style.top = y + 'px';
 }
@@ -1061,7 +1064,7 @@ viewport.addEventListener('pointerdown', e => {
   if (!editing){ const s = getSelection(); if (s && s.rangeCount && !s.isCollapsed) s.removeAllRanges(); }
   if (e.target.closest('.isl, #menu, #help, #helpBtn')) return;
   const pm = e.target.closest && e.target.closest('.pin');
-  if (pm){ e.preventDefault(); e.stopPropagation(); return downPin(e, +pm.dataset.pin); }
+  if (pm && !spaceDown && (e.button === 0 || e.button === 2)){ e.preventDefault(); e.stopPropagation(); return downPin(e, +pm.dataset.pin); }
   if (e.button === 1 || e.button === 2 || (spaceDown && e.button === 0)) return startPan(e);
   if (e.button !== 0) return;
   const h = e.target.closest('.h'), bx = e.target.closest('.box'), hit = e.target.closest('.hit');
