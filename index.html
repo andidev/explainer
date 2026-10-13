@@ -698,6 +698,7 @@ function selScreenRect(){
   const rects = [];
   for (const id of sel.boxes){ const b = box(id); if (b) rects.push(b); }
   for (const l of selLines()){ const a = box(l.from), b = box(l.to); if (!a || !b) continue;
+    rects.push(a, b); // the bar clears the boxes a selected line joins, not just the thin line
     for (const p of linkGeom(a, l.fa, b, l.ta, l.curve).pts) rects.push({ x:p.x, y:p.y, w:0, h:0 }); }
   const r = bounds(rects); if (!r) return null;
   const vr = viewport.getBoundingClientRect();
@@ -705,7 +706,8 @@ function selScreenRect(){
 }
 function positionSelbar(){
   const bar = $('selbar'); if (!bar) return;
-  const r = (hasSel() && editing == null) ? selScreenRect() : null;
+  let r = (hasSel() && editing == null) ? selScreenRect() : null;
+  if (r && (r.r < 0 || r.l > innerWidth || r.b < 0 || r.t > innerHeight)) r = null; // selection fully off-screen
   bar.hidden = !r; if (!r) return;
   const ls = selLines();
   bar.classList.toggle('no-lines', !ls.length);
@@ -718,7 +720,7 @@ function positionSelbar(){
   }
   const h = bar.offsetHeight || 40, w = bar.offsetWidth || 200, gap = 12, top = matchMedia('(max-width: 860px)').matches ? 112 : 64; // keep clear of the top islands
   let y = r.t - h - gap; if (y < top) y = r.b + gap;                          // no room above: go below
-  y = Math.min(y, innerHeight - h - 64);
+  y = Math.max(top, Math.min(y, innerHeight - h - 64));
   const x = Math.max(w/2 + 8, Math.min(innerWidth - w/2 - 8, (r.l + r.r)/2));
   bar.style.left = x + 'px'; bar.style.top = y + 'px';
 }
