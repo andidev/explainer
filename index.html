@@ -17,6 +17,7 @@ body{margin:0;font-size:14px}
   --paper:#eef1f6; --dot:#cbd2de; --ink:#1c2333; --box:#ffffff; --line:#3b4459;
   --accent:#2c56e0; --accent-soft:rgba(44,86,224,.14); --muted:#667085; --chrome:rgba(255,255,255,.86);
   --edge:#d7dce6;
+  --pin-0:#e5533d; --pin-1:#1f9e74; --pin-2:#7a5af5; --pin-3:#d4881c; --pin-4:#2f80ed; --pin-5:#d63f8c; --pin-6:#5f8f1f; --pin-7:#0f9bb3;
   --f-display:"Bricolage Grotesque", "Atkinson Hyperlegible", system-ui, sans-serif;
   --f-hand:"Caveat", "Bradley Hand", cursive;
   --f-text:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -25,11 +26,13 @@ body{margin:0;font-size:14px}
   --paper:#11151c; --dot:#262d3a; --ink:#e7eaf1; --box:#1a202b; --line:#a9b2c4;
   --accent:#7e9bff; --accent-soft:rgba(126,155,255,.18); --muted:#8f98aa; --chrome:rgba(22,27,36,.88);
   --edge:#2b3240; color-scheme:dark;
+  --pin-0:#ff7a63; --pin-1:#4cc79c; --pin-2:#a08bff; --pin-3:#f0a948; --pin-4:#6aa6ff; --pin-5:#f173b3; --pin-6:#93c255; --pin-7:#45c4dc;
 }}
 :root[data-theme="dark"]{
   --paper:#11151c; --dot:#262d3a; --ink:#e7eaf1; --box:#1a202b; --line:#a9b2c4;
   --accent:#7e9bff; --accent-soft:rgba(126,155,255,.18); --muted:#8f98aa; --chrome:rgba(22,27,36,.88);
   --edge:#2b3240; color-scheme:dark;
+  --pin-0:#ff7a63; --pin-1:#4cc79c; --pin-2:#a08bff; --pin-3:#f0a948; --pin-4:#6aa6ff; --pin-5:#f173b3; --pin-6:#93c255; --pin-7:#45c4dc;
 }
 html,body{height:100%}
 body{background:var(--paper);color:var(--ink);font-family:var(--f-text);overflow:hidden}
@@ -138,6 +141,22 @@ body.help-open #helpBtn{display:inline-flex;align-items:center;justify-content:c
 .ib svg{width:17px;height:17px}
 .isl > button:not(.ib){border:0;background:transparent}
 .isep{width:1px;height:20px;background:var(--edge);margin:0 2px}
+/* Pins: markers on the board (constant screen size) and chips in the bottom bar */
+#pinLayer{position:absolute;left:0;top:0;z-index:3}
+.pin{position:absolute;width:0;height:0;transform:scale(var(--iz,1));transform-origin:0 0;cursor:pointer}
+.pin svg{position:absolute;left:-12px;top:-23px;width:24px;height:24px;filter:drop-shadow(0 1px 1px rgba(20,30,60,.35))}
+.pin .pin-name{position:absolute;left:11px;top:-24px;white-space:nowrap;font-size:12px;font-weight:700;color:var(--ink);background:var(--chrome);border-radius:5px;padding:1px 6px}
+.pin.ghost{opacity:.35}
+.pin.flash svg{animation:pinflash .7s ease-out}
+@keyframes pinflash{0%{transform:scale(1.6)}100%{transform:scale(1)}}
+#islPins{bottom:calc(12px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);max-width:min(560px,calc(100% - 2*440px));min-width:0}
+#pinChips{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;min-width:0}
+#pinChips::-webkit-scrollbar{display:none}
+.pchip{display:inline-flex;align-items:center;gap:6px;flex:none;border:0;background:transparent;padding:5px 9px;border-radius:7px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer;white-space:nowrap}
+.pchip:hover{background:var(--accent-soft)}
+.pchip .pdot{width:9px;height:9px;border-radius:50%;flex:none}
+.pin-drag, .pin-drag *{cursor:copy!important}
+@media (prefers-reduced-motion:reduce){.pin.flash svg{animation:none}}
 /* Selection toolbar: floats just above the selection (below it if there is no room) */
 #selbar{position:fixed;z-index:6;transform:translateX(-50%);gap:2px}
 #selbar[hidden]{display:none}
@@ -163,6 +182,14 @@ body.gesturing #selbar{display:none}
 .mr-v{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px}
 .mr-v svg{width:14px;height:14px}
 .phone-only{display:none!important}
+/* Below ~1100px the centred bar no longer fits between the bottom-left island and the ? button: it moves above that row */
+@media (max-width:1100px){
+  #islPins{bottom:calc(60px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 24px)}
+  #toast{bottom:calc(108px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:1100px) and (min-width:641px){
+  body.help-open #islPins{left:12px;transform:none;max-width:calc(100% - 310px)} /* keep clear of the open shortcuts panel */
+}
 @media (max-width:860px){
   #islTC{top:calc(62px + env(safe-area-inset-top,0px))}
   #help{max-height:calc(100% - 180px - env(safe-area-inset-bottom,0px))} /* stay below #islTC */
@@ -171,6 +198,7 @@ body.gesturing #selbar{display:none}
   .phone-only{display:flex!important} hr.phone-only{display:block!important}
   .no-phone{display:none!important}
   #exampleTag{display:none!important}
+  #islPins{left:12px;right:12px;transform:none;max-width:none}
   #islTC .lbl-txt{display:none}
 }
 /* Welcome on an empty board: it lets presses through to the board, except on its items */
@@ -271,6 +299,11 @@ body.help-open .wl-help{display:none}
     <button id="placeFwd" type="button" title="Next edit place (Alt →)" aria-label="Next edit place">→</button>
   </span>
 </div>
+<div class="isl" id="islPins" role="group" aria-label="Pins">
+  <button id="pinAdd" class="ib" type="button" aria-label="Add a pin" title="Drag onto the board to add a pin"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7 14.5s-4.5-4.4-4.5-7.5a4.5 4.5 0 0 1 9 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="7" r="1.6" fill="currentColor"/><path d="M12 10v5M9.5 12.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+  <span class="isep" id="pinSep" hidden></span>
+  <div id="pinChips"></div>
+</div>
 <div class="isl" id="selbar" role="toolbar" aria-label="Selection" hidden>
   <span class="sb-lines">
     <button id="sbAngled" class="ib" type="button" title="Angled" aria-label="Angled"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13h5a2 2 0 0 0 2-2V5a2 2 0 0 1 2-2h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
@@ -296,6 +329,7 @@ body.help-open .wl-help{display:none}
       <path id="tmp" class="tmp" d=""/>
     </svg>
     <div id="layer"></div>
+    <div id="pinLayer"></div>
   </div>
 </div>
 <div id="toast" role="status"></div>
@@ -365,12 +399,12 @@ function sample(){
   ], links: [
     { id:1, from:1, fa:'e', to:2, ta:'w', arrow:true },
     { id:2, from:2, fa:'e', to:3, ta:'w', arrow:true },
-  ]};
+  ], pins: []};
 }
 // Example boxes sit on the 22px grid
 function onGrid(s){ s.boxes.forEach(b => ['x','y','w','h'].forEach(k => b[k] = Math.round(b[k]/22)*22)); return s; }
 function load(){
-  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && Array.isArray(s.boxes) && Array.isArray(s.links)) return s; } catch(e){}
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && Array.isArray(s.boxes) && Array.isArray(s.links)){ if (!Array.isArray(s.pins)) s.pins = []; return s; } } catch(e){}
   return onGrid(sample());
 }
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} scheduleUrl(); }
@@ -378,16 +412,19 @@ function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch
 /* ---------- board in the URL (compressed, like Mermaid's share links) ---------- */
 // The whole board is packed into a compact array, deflated, and base64url-encoded into the #hash.
 const boardOnly = s => [s.nextId, s.boxes.map(b => [b.id, b.x, b.y, b.w, b.h, b.text]), s.links.map(l => [l.id, l.from, l.fa, l.to, l.ta, l.back ? 2 : l.arrow ? 1 : 0, l.curve ? 1 : 0])];
-const sameBoard = (a, b) => JSON.stringify(boardOnly(a)) === JSON.stringify(boardOnly(b));
+const pinsPacked = s => (s.pins || []).map(p => [p.id, p.x, p.y, p.name, p.c]);
+const sameBoard = (a, b) => JSON.stringify(boardOnly(a)) === JSON.stringify(boardOnly(b)) && JSON.stringify(pinsPacked(a)) === JSON.stringify(pinsPacked(b));
 // Every setting travels with the board: theme, snap, capitals, line style, shortcuts panel
 const currentSettings = () => ({ t: theme, s: snap ? 1 : 0, c: { off:0, sentence:1, upper:2 }[capMode], l: lineStyle === 'curved' ? 1 : 0, a: { none:0, end:1, both:2 }[newHeads],
   h: document.body.classList.contains('help-open') ? 1 : 0, p: helpPinned ? 1 : 0 });
-const pack = s => JSON.stringify([1, ...boardOnly(s), currentSettings()]);
+// Pins ride as an optional 6th element, so older versions (which read 0–4) still open the link
+const pack = s => { const a = [1, ...boardOnly(s), currentSettings()], p = pinsPacked(s); if (p.length) a.push(p); return JSON.stringify(a); };
 function unpack(str){
   const a = JSON.parse(str); if (!Array.isArray(a) || a[0] !== 1) return null;
   return { nextId: a[1], example: false, settings: a[4] && typeof a[4] === 'object' ? a[4] : null,
     boxes: a[2].map(([id, x, y, w, h, text]) => ({ id, x, y, w, h, text: String(text) })),
-    links: a[3].filter(l => A[l[2]] && A[l[4]]).map(([id, from, fa, to, ta, ar, cv]) => ({ id, from, fa, to, ta, arrow: !!ar, back: ar === 2, curve: !!cv })) };
+    links: a[3].filter(l => A[l[2]] && A[l[4]]).map(([id, from, fa, to, ta, ar, cv]) => ({ id, from, fa, to, ta, arrow: !!ar, back: ar === 2, curve: !!cv })),
+    pins: Array.isArray(a[5]) ? a[5].filter(p => Array.isArray(p) && isFinite(p[1]) && isFinite(p[2])).map(([id, x, y, name, c]) => ({ id, x, y, name: String(name || 'Pin'), c: ((c|0) % 8 + 8) % 8 })) : [] };
 }
 const b64u = bytes => { let s = ''; for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
 const unb64u = t => { const s = atob(t.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - t.length % 4) % 4)); return Uint8Array.from(s, c => c.charCodeAt(0)); };
@@ -440,6 +477,10 @@ function saveView(){ try { localStorage.setItem(VKEY, JSON.stringify(view)); } c
 try { const v = JSON.parse(localStorage.getItem(VKEY)); if (v && isFinite(v.x) && isFinite(v.y) && v.z > 0) view = v; } catch(e){}
 
 const box = id => state.boxes.find(b => b.id === id);
+/* ---------- pins: named places on the board ---------- */
+const PIN_COLORS = 8;
+const pins = () => (state.pins || (state.pins = []));
+const pin = id => pins().find(p => p.id === id);
 function setSel(b = [], l = []){ sel = { boxes:new Set(b), links:new Set(l) }; }
 const hasSel = () => sel.boxes.size + sel.links.size > 0;
 const onlyBox = () => sel.boxes.size === 1 && !sel.links.size ? [...sel.boxes][0] : null;
@@ -601,6 +642,7 @@ function updateStyleButtons(){
   const hb = { end:$('hdEnd'), none:$('hdNone'), both:$('hdBoth') };
   for (const k in hb) if (hb[k]) hb[k].setAttribute('aria-pressed', newHeads === k);
 }
+function pinAt(e){ const q = pt(e); return { x: Math.round(q.x), y: Math.round(q.y) }; }
 function pt(e){ const r = viewport.getBoundingClientRect(); return { x: (e.clientX - r.left - view.x)/view.z, y: (e.clientY - r.top - view.y)/view.z }; }
 
 /* ---------- view: infinite pan + zoom ---------- */
@@ -610,6 +652,7 @@ function applyView(){
   viewport.style.backgroundSize = `${g}px ${g}px`;
   viewport.style.backgroundPosition = `${view.x - g/2}px ${view.y - g/2}px`;
   $('zoomBtn').textContent = Math.round(view.z*100) + '%';
+  world.style.setProperty('--iz', 1/view.z);
   saveView();
   positionSelbar();
 }
@@ -701,7 +744,30 @@ function renderAll(){
   renderSel();
   $('exampleTag').hidden = !state.example;
   updateWelcome();
+  renderPins();
 }
+function renderPins(){
+  const L = $('pinLayer'), C = $('pinChips'); if (!L || !C) return;
+  const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[ch]);
+  L.innerHTML = pins().map(p => `<div class="pin" data-pin="${p.id}" style="left:${p.x}px;top:${p.y}px" title="${esc(p.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 23s7.5-7.4 7.5-12.5a7.5 7.5 0 1 0-15 0C4.5 15.6 12 23 12 23z" fill="var(--pin-${p.c})" stroke="var(--box)" stroke-width="1.5"/><circle cx="12" cy="10.5" r="2.8" fill="var(--box)"/></svg><span class="pin-name">${esc(p.name)}</span></div>`).join('');
+  C.innerHTML = pins().map(p => `<button class="pchip" type="button" data-pin="${p.id}" title="Jump to ${esc(p.name)}"><span class="pdot" style="background:var(--pin-${p.c})"></span><span class="pname">${esc(p.name)}</span></button>`).join('');
+  $('pinSep').hidden = !pins().length;
+}
+function jumpToPin(id){
+  const p = pin(id); if (!p) return;
+  animateView({ z: view.z, x: viewport.clientWidth/2 - p.x*view.z, y: viewport.clientHeight/2 - p.y*view.z });
+  const m = document.querySelector(`.pin[data-pin="${id}"]`);
+  if (m){ m.classList.remove('flash'); void m.offsetWidth; m.classList.add('flash'); }
+}
+// A press on a marker: a click jumps to it (Task 3 adds dragging, Task 2 adds the right-click menu)
+function downPin(e, id){
+  if (e.button !== 0) return;
+  const sx = e.clientX, sy = e.clientY; let moved = false;
+  gesture = { move(ev){ if (Math.hypot(ev.clientX - sx, ev.clientY - sy) > 4) moved = true; },
+    up(){ if (!moved) jumpToPin(id); }, cancel(){} };
+}
+$('pinChips').addEventListener('click', e => { const c = e.target.closest('.pchip'); if (c) jumpToPin(+c.dataset.pin); });
+$('pinChips').addEventListener('pointerdown', e => { if (e.target.closest('.pchip')) e.preventDefault(); });
 // The welcome shows whenever the board has no boxes
 function updateWelcome(){ const w = $('welcome'); if (w) w.hidden = !!(state && state.boxes.length); }
 function renderLinks(extra){
@@ -994,6 +1060,8 @@ viewport.addEventListener('pointerdown', e => {
   if (gesture) cancelGesture(); // a stale gesture from a missed release never survives a new press
   if (!editing){ const s = getSelection(); if (s && s.rangeCount && !s.isCollapsed) s.removeAllRanges(); }
   if (e.target.closest('.isl, #menu, #help, #helpBtn')) return;
+  const pm = e.target.closest && e.target.closest('.pin');
+  if (pm){ e.preventDefault(); e.stopPropagation(); return downPin(e, +pm.dataset.pin); }
   if (e.button === 1 || e.button === 2 || (spaceDown && e.button === 0)) return startPan(e);
   if (e.button !== 0) return;
   const h = e.target.closest('.h'), bx = e.target.closest('.box'), hit = e.target.closest('.hit');
@@ -1262,6 +1330,7 @@ function newBoxAt(p, size){
 viewport.addEventListener('dblclick', e => {
   // Pointer capture retargets click events to the board, so look up what is really under the pointer
   const under = document.elementFromPoint(e.clientX, e.clientY) || e.target;
+  if (under.closest('.pin')) return;
   const bx = under.closest('.box'), h = under.closest('.h');
   if (!bx){ if (!under.closest('.hit') && !under.closest('.isl, #menu, #help, #helpBtn') && !spaceDown){ e.preventDefault(); newBoxAt(pt(e), sizeFor(e)); } return; }
   if (e.shiftKey || e.metaKey || e.ctrlKey) return; // Cmd/Ctrl+click connects; a quick second click must not start editing
@@ -1495,8 +1564,8 @@ $('zoomIn').onclick = () => zoomAt(view.z*1.2, viewport.clientWidth/2, viewport.
 $('zoomOut').onclick = () => zoomAt(view.z/1.2, viewport.clientWidth/2, viewport.clientHeight/2);
 $('clearBtn').onclick = () => {
   if (editing) endEdit();
-  if (!state.boxes.length) return;
-  state = { nextId: state.nextId, example:false, boxes:[], links:[] }; setSel(); armed = null;
+  if (!state.boxes.length && !pins().length) return;
+  state = { nextId: state.nextId, example:false, boxes:[], links:[], pins:[] }; setSel(); armed = null;
   renderAll(); commit(); toast('Board cleared. Undo brings it back.');
 };
 let tt; function toast(m){ toastEl.textContent = m; toastEl.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => toastEl.classList.remove('on'), 2200); }
@@ -1537,7 +1606,7 @@ function selectionBoard(){
   state.links.forEach(l => { if (sel.links.has(l.id)){ ids.add(l.from); ids.add(l.to); } });
   const boxes = state.boxes.filter(b => ids.has(b.id));
   const links = state.links.filter(l => ids.has(l.from) && ids.has(l.to) && (sel.links.has(l.id) || (sel.boxes.has(l.from) && sel.boxes.has(l.to))));
-  return { nextId: state.nextId, example: false, boxes: JSON.parse(JSON.stringify(boxes)), links: JSON.parse(JSON.stringify(links)) };
+  return { nextId: state.nextId, example: false, boxes: JSON.parse(JSON.stringify(boxes)), links: JSON.parse(JSON.stringify(links)), pins: [] };
 }
 const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 'es'.slice(w.endsWith('x') ? 0 : 1));
 function openShareMenu(open){
@@ -1569,7 +1638,7 @@ window.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('shareMen
   const fromUrl = location.hash.length > 4 ? await decodeBoard(location.hash.slice(1)) : null;
   const urlSettings = fromUrl && fromUrl.settings; if (fromUrl) delete fromUrl.settings;
   state = fromUrl || load(); if (fromUrl) lastToken = location.hash.slice(1);
-  applySettings(urlSettings);
+  pins(); applySettings(urlSettings);
   history = [JSON.stringify(state)]; hIdx = 0;
   applyView(); renderAll(); updateButtons();
   // A refresh reloads our own URL: only treat it as a newly opened board if it differs from what's saved here
