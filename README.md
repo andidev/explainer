@@ -1,23 +1,84 @@
-# Explainer
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark.png">
+    <img src="docs/logo-light.png" alt="Explainer" width="520">
+  </picture>
+</p>
 
-A very simple diagramming tool for explaining things. Draw boxes, type, connect them.
+<p align="center">
+  A tiny whiteboard for explaining things. Draw a box, type, connect it to the next one.<br>
+  No sign-up, no install, no menus to learn. One HTML file.
+</p>
 
-The whole app is one file: `index.html`. Open it in a browser, or host it on any static host
-(GitHub Pages, Netlify, Cloudflare Pages). The board is saved in the URL after `#`, so the
-address bar is always a shareable link, and it is also kept in the browser's local storage.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.png">
+    <img src="docs/screenshot-light.png" alt="Explainer showing a flow of boxes and arrows that explains how a web page loads" width="100%">
+  </picture>
+</p>
 
-## Using it
+## What it's for
 
-- Drag on empty space, or double-click it, to make a box. Type straight away.
-- Click the text to edit. Click around the text to select the box. Double-click selects all text.
-- Drag a box to move it. Drag across items to select them; Shift+click adds to the selection.
-- Move near a box's edge to reveal the nearest dot, then drag it onto another box to connect.
-  Double-click a dot first for a line without an arrow.
-- Angled / Curved sets the style of selected lines and new lines.
-- Share copies a link to the whole board or to only the selected items.
-- ← Edits → (Alt+←/→) jumps between the places you last changed.
-- Ctrl/⌘ Z undo, Shift+Ctrl/⌘ Z redo, Ctrl/⌘ A select all, Backspace delete.
-- G snap to grid, T theme (Auto / Light / Dark). All settings are saved with the board.
+Explainer is for the moment when you need to show how something works: a process, a system, an
+idea, the steps of a decision. Tools like Draw.io can do far more, and that is the problem when all
+you need is a few boxes and arrows in the next two minutes. Explainer does only that, and gets out
+of the way.
 
-Candidate domains that were unregistered when checked (Oct 2026): explain.how, explainthis.how,
-explainthis.page, explainer.how, boxsplain.com, whyboard.app, explainerboard.com.
+- Sketching how a system fits together during a call
+- Walking a teammate or a customer through a flow
+- Planning steps before writing them down
+- Sending someone a diagram as a link, without an account or a file
+
+## How it works
+
+**Draw.** Drag on empty space, or double-click it, and a box appears with the cursor already in it.
+Text stays centred and wraps. When the box fills up it grows by half again, so you never stop to
+resize.
+
+**Connect.** Move toward the edge of a box and the nearest connection dot appears. Drag it onto
+another box. Lines find their own way around other boxes, and you can choose angled or curved lines.
+Double-click a dot first if you want a line without an arrow.
+
+**Arrange.** Drag a box from anywhere to move it, and its lines follow. Drag across several items to
+select them, or Shift+click to add to the selection. Boxes snap to the grid unless you turn it off.
+
+**Share.** The whole board lives in the page's address, so the link *is* the diagram. Refresh and it
+is still there. Use **Share** to copy a link to the whole board or to only the items you selected.
+Your settings, including light or dark mode, travel with the link.
+
+## Shortcuts
+
+| Action | Keys |
+|---|---|
+| New box | Drag or double-click empty space |
+| Edit text / select all text | Click the text / double-click the box |
+| Select the box | Click around the text |
+| Add to selection | Shift+click, or drag across items |
+| Delete selected | Backspace or Delete |
+| Select everything | Ctrl/⌘ A |
+| Undo / redo | Ctrl/⌘ Z / Shift+Ctrl/⌘ Z |
+| Jump between your recent edits | Alt+← / Alt+→ |
+| Pan / zoom | Scroll or Space+drag / Ctrl+scroll |
+| Snap to grid on or off | G |
+| Theme: Auto, Light, Dark | T |
+| Stop editing | Esc |
+
+The same list is in the app, behind the **?** button.
+
+## Run it
+
+Open `index.html` in any modern browser. That's it: there is no build step and no dependencies.
+
+To put it online, upload the folder to any static host such as GitHub Pages, Netlify or
+Cloudflare Pages.
+
+## Project files
+
+| File | What it is |
+|---|---|
+| `index.html` | The entire app: markup, styles and script in one file |
+| `DECISIONS.md` | Every product decision, numbered `D-001`, `D-002`, …, with overrides marked |
+| `CLAUDE.md` | Notes for AI coding agents working on this repository |
+| `docs/` | Logo and screenshots used in this README |
+
+Changing how Explainer behaves? Read `DECISIONS.md` first and add a decision for your change.
