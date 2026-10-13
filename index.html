@@ -156,6 +156,7 @@ body.help-open #helpBtn{display:inline-flex;align-items:center;justify-content:c
 .phone-only{display:none!important}
 @media (max-width:860px){
   #islTC{top:calc(62px + env(safe-area-inset-top,0px))}
+  #help{max-height:calc(100% - 180px - env(safe-area-inset-bottom,0px))} /* stay below #islTC */
 }
 @media (max-width:640px){
   .phone-only{display:flex!important} hr.phone-only{display:block!important}
