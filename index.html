@@ -792,13 +792,16 @@ function downPin(e, id){
   const el = () => document.querySelector(`.pin[data-pin="${id}"]`);
   let lp = null, longPressed = false; const lpStop = () => { clearTimeout(lp); lp = null; };
   if (e.pointerType !== 'mouse') lp = setTimeout(() => { lp = null; longPressed = true; openPinMenu(id, sx, sy); }, LONG_PRESS_MS);
+  const slop = pressSlop(e);
   gesture = { active:false,
-    move(ev){ if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 4) return; moved = true; lpStop(); if (longPressed) return; this.active = true;
+    move(ev){ if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < slop) return; moved = true; lpStop(); if (longPressed) return; this.active = true;
       const q = pinAt(ev), m = el(); if (m){ m.style.left = (ox + q.x - start.x) + 'px'; m.style.top = (oy + q.y - start.y) + 'px'; } },
     up(ev){ lpStop(); if (longPressed) return; if (!moved){ jumpToPin(id); return; } const q = pinAt(ev); movePin(id, ox + q.x - start.x, oy + q.y - start.y); },
     cancel(){ lpStop(); renderPins(); } };
 }
 const LONG_PRESS_MS = 500; // touch and pen: Safari sends no contextmenu on a long press
+// How far a press may drift before it counts as a drag: fingers wobble more than a mouse
+const pressSlop = e => e.pointerType === 'mouse' ? 4 : 10;
 let pinDragJustEnded = 0; // a chip drag must not also count as a click that jumps
 $('pinChips').addEventListener('click', e => { if (e.target.closest('.pname-edit') || performance.now() - pinDragJustEnded < 300) return; const c = e.target.closest('.pchip'); if (c) jumpToPin(+c.dataset.pin); });
 $('pinChips').addEventListener('dblclick', e => { const c = e.target.closest('.pchip'); if (c && !e.target.closest('.pname-edit')) renamePin(+c.dataset.pin); });
@@ -808,13 +811,14 @@ $('pinChips').addEventListener('pointerdown', e => {
   const id = +c.dataset.pin, p = pin(id), sx = e.clientX, sy = e.clientY; let moved = false, ghost = null, longPressed = false, lp = null;
   const lpStop = () => { clearTimeout(lp); lp = null; };
   if (e.pointerType !== 'mouse') lp = setTimeout(() => { lp = null; longPressed = true; openPinMenu(id, sx, sy); }, LONG_PRESS_MS);
+  const slop = pressSlop(e);
   const overBoard = ev => { const el = document.elementFromPoint(ev.clientX, ev.clientY); return el && el.closest('#viewport') && !el.closest('.isl, #menu, #help, #helpBtn, #selbar, #pinMenu'); };
   const marker = () => document.querySelector(`.pin[data-pin="${id}"]`);
   const tidy = () => { document.body.classList.remove('pin-drag'); if (ghost) ghost.remove(); ghost = null; };
   gesture = {
     move(ev){
       if (longPressed) return;
-      if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 4) return;
+      if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < slop) return;
       if (!moved){ moved = true; lpStop(); document.body.classList.add('pin-drag'); const m = marker(); if (m) m.classList.add('ghost');
         ghost = document.createElement('div'); ghost.className = 'pin'; ghost.innerHTML = pinSvg(p.c); $('pinLayer').appendChild(ghost); }
       const q = pinAt(ev); ghost.style.left = q.x + 'px'; ghost.style.top = q.y + 'px'; ghost.style.visibility = overBoard(ev) ? 'visible' : 'hidden';

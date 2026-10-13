@@ -634,7 +634,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `newHeads`, `setNewHeads`, `headsFrom`, `explainer.newheads`, `currentSettings`/`applySettings`.
 
 ### D-063: Pins: named places to jump to
-- Status: Active
+- Status: Amended by D-064
 - Date: 2026-10-13
 - Amends: D-057
 - Decision: A pin is a named, coloured place on the board that you can jump back to.
@@ -655,8 +655,8 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   - **Chips.** Click jumps to the pin. Drag onto the board moves the pin; releasing over a
     control cancels. On touch, sideways movement scrolls the bar instead.
   - **Right-click menu.** On a chip or a marker (on touch or pen: a 500ms long-press that has not
-    moved, which opens the menu without also jumping or moving): Rename and Delete pin. It closes on Esc, a click
-    outside, the wheel or a resize.
+    moved, which opens the menu without also jumping or moving): Rename and Delete pin. It closes
+    on Esc, a click outside, the wheel or a resize.
   - **Undo.** Add, rename, move and delete are each one undo step, and undo or redo reveals the
     pin that changed. Clear board removes the pins (undoable). The example board has no pins.
   - **Links.** Pins travel in share links as an optional 6th packed element
@@ -669,3 +669,14 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `#islPins`, `#pinLayer`, `#pinMenu`, `pins`, `renderPins`, `addPin`, `movePin`,
   `deletePin`, `renamePin`, `jumpToPin`, `downPin`, `nextPinName`, `nextPinColor`, `openPinMenu`,
   `closePinMenu`, `PIN_COLORS`, `pack`/`unpack`.
+
+### D-064: Touch presses on pins allow 10px of drift
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-063
+- Decision: On touch and pen, a press on a pin chip or marker may drift up to 10px and still count
+  as a press: holding it for 500ms opens the pin menu, and lifting it jumps. Only movement beyond
+  10px starts a drag. With a mouse the threshold stays 4px.
+- Why: User asked for a 10px long-press threshold; fingers wobble, and 4px often turned a long-press
+  into an accidental drag.
+- Code: `pressSlop`, `downPin`, `#pinChips` `pointerdown`.
