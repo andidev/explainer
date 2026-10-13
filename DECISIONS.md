@@ -552,7 +552,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   the transform off), `clipText`, `currentSettings`/`applySettings`, `explainer.capmode`, `sample`.
 
 ### D-057: Floating islands replace the header
-- Status: Active
+- Status: Amended by D-063
 - Date: 2026-10-13
 - Amends: D-055, D-037
 - Decision: There is no header; the board fills the window and small islands float over it.
@@ -632,3 +632,38 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Why: User chose the floating layout inspired by Excalidraw, with the new-line style in the
   top island.
 - Code: `newHeads`, `setNewHeads`, `headsFrom`, `explainer.newheads`, `currentSettings`/`applySettings`.
+
+### D-063: Pins: named places to jump to
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-057
+- Decision: A pin is a named, coloured place on the board that you can jump back to.
+  - **Bar.** A pin bar island holds a 📍+ button and one chip per pin. Above 1100px wide it is
+    centred at the bottom; at 1100px or less it sits just above the bottom-left island and keeps
+    clear of an open shortcuts panel; at 640px or less it stretches between the screen insets.
+    The chips scroll sideways, by touch too. The selection toolbar keeps clear of the bar.
+  - **Create.** Clicking 📍+ (or Enter/Space on it) adds a pin at the centre of the view.
+    Dragging it drops a pin where you release; releasing over a control cancels. A new pin is
+    named "Pin N" (the lowest N not in use) and takes the first unused colour of 8 (the colours
+    repeat when all are used). It opens straight into rename.
+  - **Rename.** The chip becomes a text field (40 characters typed; names from links are capped
+    at 60). Enter or clicking away saves; Esc or an empty name keeps the old name. Starting a
+    rename finishes any other rename first.
+  - **Markers.** Each pin shows as a marker on the board at a constant size at any zoom. Click
+    jumps to it; drag moves it (one undo step, and dragging back to the start adds none).
+    Space or middle-button drag on a marker still pans.
+  - **Chips.** Click jumps to the pin. Drag onto the board moves the pin; releasing over a
+    control cancels. On touch, sideways movement scrolls the bar instead.
+  - **Right-click menu.** On a chip or a marker: Rename and Delete pin. It closes on Esc, a click
+    outside, the wheel or a resize.
+  - **Undo.** Add, rename, move and delete are each one undo step, and undo or redo reveals the
+    pin that changed. Clear board removes the pins (undoable). The example board has no pins.
+  - **Links.** Pins travel in share links as an optional 6th packed element
+    `[[id,x,y,name,c],…]`, written only when there are pins. Pins with a non-integer id are
+    dropped. Older versions ignore the element; links without it load with no pins.
+  - **Copy and share.** Copy/paste and Share → Selected items leave pins out.
+- Why: User asked for pins they can drop on the board, name, colour automatically, jump to, move
+  and delete. Amending D-057: adds a bottom-centre island.
+- Code: `#islPins`, `#pinLayer`, `#pinMenu`, `pins`, `renderPins`, `addPin`, `movePin`,
+  `deletePin`, `renamePin`, `jumpToPin`, `downPin`, `nextPinName`, `nextPinColor`, `openPinMenu`,
+  `closePinMenu`, `PIN_COLORS`, `pack`/`unpack`.

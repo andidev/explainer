@@ -22,11 +22,12 @@ It describes how the app must behave.
 
 ## Code map (index.html)
 
-- State: `state = { nextId, boxes:[{id,x,y,w,h,text}], links:[{id,from,fa,to,ta,arrow,curve}] }`.
+- State: `state = { nextId, boxes:[{id,x,y,w,h,text}], links:[{id,from,fa,to,ta,arrow,curve}], pins:[{id,x,y,name,c}] }`.
   Anchors (`fa`/`ta`) are keys of `A`: nw, n, ne, e, se, s, sw, w.
 - History: `commit()` snapshots `state` for undo/redo; call it after every user-visible change.
 - Gestures: viewport `pointerdown` dispatches to `downCanvas`, `downBox`, `downHandle`, `startPan`;
   the active gesture lives in `gesture` and must end via `endGesture`/`cancelGesture`.
+- Pins: #islPins bar, #pinLayer markers, pins()/addPin/movePin/deletePin/renamePin/jumpToPin; packed as optional 6th element.
 - Chrome: floating islands (#islTL/#islTC/#islTR/#islBL), ☰ #menu, #selbar (positionSelbar), #welcome (updateWelcome).
 - Lines: `linkGeom` → `route` (orthogonal path search) or `arcCurve`; drawn in `renderLinks`.
 - Persistence: localStorage (`explainer.*` keys) plus the URL hash via `pack`/`encodeBoard`.
