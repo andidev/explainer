@@ -1,0 +1,1213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Explainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700&display=swap">
+<style>
+/* base reset (the artifact host normally provides this) */
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font-size:14px}
+[hidden]{display:none!important}
+/* Layout: slim tool header over an infinite dotted canvas; boxes are HTML, connectors SVG underneath, the whole world is panned/zoomed with one transform */
+:root{
+  --paper:#eef1f6; --dot:#cbd2de; --ink:#1c2333; --box:#ffffff; --line:#3b4459;
+  --accent:#2c56e0; --accent-soft:rgba(44,86,224,.14); --muted:#667085; --chrome:rgba(255,255,255,.86);
+  --edge:#d7dce6;
+  --f-display:"Bricolage Grotesque", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --f-text:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#11151c; --dot:#262d3a; --ink:#e7eaf1; --box:#1a202b; --line:#a9b2c4;
+  --accent:#7e9bff; --accent-soft:rgba(126,155,255,.18); --muted:#8f98aa; --chrome:rgba(22,27,36,.88);
+  --edge:#2b3240; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --paper:#11151c; --dot:#262d3a; --ink:#e7eaf1; --box:#1a202b; --line:#a9b2c4;
+  --accent:#7e9bff; --accent-soft:rgba(126,155,255,.18); --muted:#8f98aa; --chrome:rgba(22,27,36,.88);
+  --edge:#2b3240; color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-text);display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 16px;background:var(--chrome);border-bottom:1px solid var(--edge);backdrop-filter:blur(8px);position:relative;z-index:5}
+.mark{font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+.mark svg{width:22px;height:22px}
+.hint{color:var(--muted);font-size:13px;flex:1;min-width:0}
+.hint kbd{font-family:var(--f-text);font-size:11.5px;border:1px solid var(--edge);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--box);color:var(--ink)}
+.tools{display:flex;gap:6px;flex-wrap:wrap}
+#snapBtn,#capBtn{display:inline-flex;align-items:center;gap:8px}
+#themeBtn{display:inline-flex;align-items:center;gap:6px;min-width:76px}
+#themeBtn svg{width:14px;height:14px}
+.track{width:26px;height:15px;border-radius:999px;background:var(--edge);position:relative;transition:background .15s}
+.track::after{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:var(--box);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+[aria-checked="true"] > .track{background:var(--accent)}
+[aria-checked="true"] > .track::after{transform:translateX(11px)}
+.seg{display:inline-flex;align-items:stretch;border:1px solid var(--edge);border-radius:6px;background:var(--box);overflow:hidden}
+.seg button{border:0;border-radius:0;padding:5px 9px;background:transparent}
+.seg button[aria-pressed]{display:inline-flex;align-items:center;gap:5px;color:var(--muted)}
+.seg button svg{width:14px;height:14px}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+.seg button + button{border-left:1px solid var(--edge)}
+.seg-label{display:flex;align-items:center;font-size:12px;color:var(--muted);padding:0 2px}
+button{font:inherit;font-size:13px;color:var(--ink);background:var(--box);border:1px solid var(--edge);border-radius:6px;padding:5px 11px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#zoomBtn{font-variant-numeric:tabular-nums;min-width:58px}
+.example{font-size:12px;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:3px 10px}
+
+#viewport{flex:1;position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;
+  background-image:radial-gradient(var(--dot) 1.1px, transparent 1.3px)}
+#viewport.space{cursor:grab}
+#viewport:focus{outline:none}
+#viewport.panning,#viewport.panning *{cursor:grabbing!important}
+#world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0}
+#links{position:absolute;pointer-events:none;overflow:visible;z-index:1}
+#links .ln{stroke:var(--line);stroke-width:1.75;fill:none;stroke-linecap:round}
+#links .ln.sel{stroke:var(--accent);stroke-width:2.25}
+#links .hit{stroke:transparent;stroke-width:16;fill:none;pointer-events:stroke;cursor:pointer}
+#links .ah{fill:var(--line)} #links .ah-sel{fill:var(--accent)}
+#links .tmp{stroke:var(--accent);stroke-width:2;fill:none;stroke-linecap:round}
+#layer{position:absolute;left:0;top:0;z-index:2}
+
+.box{position:absolute;box-sizing:border-box;display:flex;align-items:center;justify-content:center;
+  padding:12px;background:var(--box);border:1.5px solid var(--ink);border-radius:7px;cursor:grab;z-index:0;
+  box-shadow:0 1px 0 var(--edge),0 6px 16px -10px rgba(20,30,60,.35)}
+.box::before{content:"";position:absolute;inset:-12px;z-index:-1}
+.box.sel{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent);background-image:linear-gradient(var(--accent-soft),var(--accent-soft))}
+/* Editing isn't selection: the box keeps its normal look and only shows the caret, so Backspace clearly edits text */
+.box.sel.editing{background-image:none;border-color:var(--ink);box-shadow:0 0 0 1px var(--accent),0 6px 16px -10px rgba(20,30,60,.35)}
+.box.dragging{cursor:grabbing}
+.box.target{border-color:var(--accent)}
+.box.flash{animation:flash .7s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 10px var(--accent-soft)}100%{box-shadow:0 0 0 3px var(--accent-soft)}}
+.txt{width:100%;min-height:1.35em;text-align:center;font-size:16px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;outline:none;cursor:inherit;caret-color:var(--accent)}
+.box.editing{cursor:default}
+.box.editing .txt{cursor:text;user-select:text;-webkit-user-select:text}
+.h{position:absolute;width:11px;height:11px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--box);border:2px solid var(--accent);
+  opacity:0;transition:opacity .12s, transform .12s;z-index:2;cursor:crosshair}
+.h::after{content:"";position:absolute;inset:-4px}
+.h.near{opacity:1}
+@media (hover:none){.box.sel .h{opacity:1}}
+.h:hover{transform:scale(1.35)}
+.h.snap{opacity:1;background:var(--accent);transform:scale(1.35)}
+.h.armed{opacity:1;background:var(--accent);border-color:var(--box);box-shadow:0 0 0 2px var(--accent)}
+.draft{position:absolute;border:1.5px dashed var(--accent);background:var(--accent-soft);border-radius:7px;pointer-events:none;z-index:3}
+.draft.marquee{border:1px solid var(--accent);background:transparent;border-radius:2px;box-shadow:inset 0 0 0 9999px var(--accent-soft);opacity:.85}
+
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,8px);background:var(--ink);color:var(--paper);
+  font-size:13px;padding:8px 14px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s, transform .15s;z-index:9;max-width:calc(100% - 32px);text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.hint{flex:1}
+.share-wrap{position:relative;display:inline-flex}
+#shareBtn{display:inline-flex;align-items:center;gap:6px}
+#shareBtn svg{width:14px;height:14px}
+#shareMenu{position:absolute;top:calc(100% + 6px);left:0;z-index:8;min-width:230px;padding:4px;background:var(--box);border:1px solid var(--edge);border-radius:8px;
+  box-shadow:0 10px 28px -12px rgba(20,30,60,.45);display:flex;flex-direction:column;gap:2px}
+#shareMenu[hidden]{display:none}
+#shareMenu button{border:0;text-align:left;display:flex;flex-direction:column;gap:1px;padding:7px 10px;border-radius:6px}
+#shareMenu button:hover:not(:disabled){background:var(--accent-soft);color:var(--ink)}
+#shareMenu button span{font-size:12px;color:var(--muted)}
+#help{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:6;width:262px;max-width:calc(100% - 32px);
+  background:var(--chrome);backdrop-filter:blur(8px);border:1px solid var(--edge);border-radius:10px;padding:10px 12px 12px;font-size:12px;color:var(--muted)}
+.help-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.help-head button{border:0;background:none;padding:0 4px;font-size:16px;line-height:1;color:var(--muted)}
+.help-actions{display:flex;align-items:center;gap:2px}
+#helpPin{display:inline-flex;align-items:center;padding:3px;border-radius:4px}
+#helpPin svg{width:13px;height:13px}
+#helpPin[aria-pressed="true"]{color:var(--accent);background:var(--accent-soft)}
+#helpPin[aria-pressed="true"] svg path{fill:currentColor}
+#help dl{display:grid;grid-template-columns:1fr auto;gap:4px 10px;margin:0}
+#help dt{margin:0;min-width:0} #help dd{margin:0;color:var(--ink);text-align:right}
+#help kbd,#help .mod{font-family:var(--f-text);font-size:11px;border:1px solid var(--edge);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--box);color:var(--ink)}
+#helpBtn{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:6;width:34px;height:34px;padding:0;border-radius:50%;
+  font-weight:700;color:var(--muted);background:var(--chrome);backdrop-filter:blur(8px)}
+body:not(.help-open) #help{display:none}
+body.help-open #helpBtn{display:none}
+@media (prefers-reduced-motion:reduce){.h,#toast{transition:none}.box.flash{animation:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2" y="3" width="8" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="14" width="8" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><path d="M10 6.5h4.5a2 2 0 0 1 2 2V11" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/><path d="M14 10.5l2.5 2.5 2.5-2.5" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Explainer</div>
+  <span class="example" id="exampleTag" hidden>Example board</span>
+  <div class="hint"></div>
+  <div class="tools">
+    <button id="themeBtn" type="button" title="Theme">Auto</button>
+    <button id="capBtn" type="button" role="switch" aria-checked="true" title="Capitalise the first letter of each sentence"><span class="track" aria-hidden="true"></span>Auto-capitalise</button>
+    <button id="snapBtn" type="button" role="switch" aria-checked="false" title="Snap boxes to the grid (G)"><span class="track" aria-hidden="true"></span>Snap to grid</button>
+    <span class="share-wrap">
+      <button id="shareBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Share a link to this board or to the selected items"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2M5 5l3-3 3 3M3 9v4h10V9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Share</button>
+      <div id="shareMenu" role="menu" hidden>
+        <button id="shareAll" type="button" role="menuitem"><b>Whole board</b><span id="shareAllNote"></span></button>
+        <button id="shareSel" type="button" role="menuitem"><b>Selected items</b><span id="shareSelNote"></span></button>
+      </div>
+    </span>
+    <span class="seg" role="group" aria-label="Line style" title="Style for selected lines and new lines">
+      <button id="lsAngled" type="button" aria-pressed="true" title="Angled lines that follow the grid"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13h5a2 2 0 0 0 2-2V5a2 2 0 0 1 2-2h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Angled</button>
+      <button id="lsCurved" type="button" aria-pressed="false" title="Curved lines"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13C7 13 9 3 14 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Curved</button>
+    </span>
+    <span class="seg" role="group" aria-label="Edit places">
+      <button id="placeBack" type="button" title="Previous edit place (Alt ←)" aria-label="Previous edit place">←</button>
+      <span class="seg-label">Edits</span>
+      <button id="placeFwd" type="button" title="Next edit place (Alt →)" aria-label="Next edit place">→</button>
+    </span>
+    <button id="undoBtn" type="button" title="Undo (Ctrl/⌘ Z)">Undo</button>
+    <button id="redoBtn" type="button" title="Redo (Ctrl/⌘ Shift Z)">Redo</button>
+    <button id="zoomBtn" type="button" title="Reset zoom to 100%">100%</button>
+    <button id="homeBtn" type="button" title="Show the whole board">Fit board</button>
+    <button id="clearBtn" type="button">Clear board</button>
+  </div>
+</header>
+<div id="viewport" tabindex="-1" aria-label="Board">
+  <div id="world">
+    <svg id="links" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ah" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path class="ah" d="M0,1 L12,6 L0,11 z"/></marker>
+        <marker id="ahs" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path class="ah-sel" d="M0,1 L12,6 L0,11 z"/></marker>
+      </defs>
+      <g id="linkG"></g>
+      <path id="tmp" class="tmp" d=""/>
+    </svg>
+    <div id="layer"></div>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+<aside id="help" aria-label="Shortcuts">
+  <div class="help-head"><span>Shortcuts</span><span class="help-actions"><button id="helpPin" type="button" aria-pressed="false" aria-label="Pin shortcuts" title="Pin: keep open while you work"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 1.5l4 4-1.6.6-2.6 2.6.4 3.3-1.1 1.1-3-3-3.6 3.6-.7-.7 3.6-3.6-3-3 1.1-1.1 3.3.4 2.6-2.6z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></button><button id="helpMin" type="button" aria-label="Minimise help" title="Minimise">–</button></span></div>
+  <dl>
+    <dt>Drag or double-click empty space</dt><dd>New box</dd>
+    <dt>Drag across items</dt><dd>Select them</dd>
+    <dt>Click the text</dt><dd>Edit text</dd>
+    <dt>Click around the text</dt><dd>Select box</dd>
+    <dt><kbd>⇧</kbd>+click box or line</dt><dd>Add to selection</dd>
+    <dt>Double-click a box</dt><dd>Select its text</dd>
+    <dt>Drag a box</dt><dd>Move</dd>
+    <dt>Drag a dot onto a box</dt><dd>Connect</dd>
+    <dt>Double-click a dot, drag</dt><dd>Line, no arrow</dd>
+    <dt>Scroll · <kbd>Space</kbd>+drag</dt><dd>Pan</dd>
+    <dt><kbd class="mod">Ctrl</kbd>+scroll</dt><dd>Zoom</dd>
+    <dt><kbd class="mod">Ctrl</kbd> <kbd>A</kbd></dt><dd>Select all</dd>
+    <dt><kbd>⌫</kbd> · <kbd>Del</kbd></dt><dd>Delete selected</dd>
+    <dt><kbd class="mod">Ctrl</kbd> <kbd>Z</kbd></dt><dd>Undo</dd>
+    <dt><kbd>⇧</kbd> <kbd class="mod">Ctrl</kbd> <kbd>Z</kbd></dt><dd>Redo</dd>
+    <dt>Hover a line, drag</dt><dd>New line from its end</dd>
+    <dt><kbd>Alt</kbd> <kbd>←</kbd> / <kbd>→</kbd></dt><dd>Jump between edits</dd>
+    <dt>Angled / Curved</dt><dd>Style of selected + new lines</dd>
+    <dt><kbd>G</kbd></dt><dd>Snap to grid on/off</dd>
+    <dt><kbd>T</kbd></dt><dd>Theme: Auto / Light / Dark</dd>
+    <dt><kbd>Esc</kbd></dt><dd>Stop editing</dd>
+    <dt>Pin icon above</dt><dd>Keep this open</dd>
+  </dl>
+</aside>
+<button id="helpBtn" type="button" aria-label="Show shortcuts" title="Shortcuts">?</button>
+
+<script>
+(function(){
+const PAD = 12, GROW = 1.5, KEY = 'explainer.board.v1', VKEY = 'explainer.view.v1', TYPE_PAUSE = 700;
+const A = { nw:[0,0], n:[.5,0], ne:[1,0], e:[1,.5], se:[1,1], s:[.5,1], sw:[0,1], w:[0,.5] };
+const $ = id => document.getElementById(id);
+const viewport = $('viewport'), world = $('world'), layer = $('layer'), svg = $('links'),
+      linkG = $('linkG'), tmp = $('tmp'), toastEl = $('toast');
+
+const CE = (() => { const d = document.createElement('div'); try { d.contentEditable = 'plaintext-only'; } catch(e){} return d.contentEditable === 'plaintext-only' ? 'plaintext-only' : 'true'; })();
+
+let state, sel = { boxes:new Set(), links:new Set() }, editing = null, armed = null, lastHandle = { key:'', t:0 }, gesture = null;
+let history = [], hIdx = -1, typeTimer = 0;
+let view = { x: 40, y: 30, z: 1 };
+let spaceDown = false, lastEv = null, raf = 0, viewAnim = 0;
+const els = new Map();
+
+function sample(){
+  return { nextId: 7, example: true, boxes: [
+    { id:1, x:60,  y:70,  w:210, h:80,  text:'Drag on empty space to draw a box' },
+    { id:2, x:380, y:60,  w:240, h:100, text:'Start typing. The text stays centred, and the box grows when it fills up' },
+    { id:3, x:380, y:260, w:240, h:100, text:'Move near a corner or edge middle to reveal a dot, then drag it onto another box' },
+    { id:4, x:720, y:270, w:220, h:80,  text:'Double-click a dot first to get a line without an arrow' },
+    { id:5, x:60,  y:270, w:220, h:110, text:'Click the text to edit it, or around it to select the box. Hold and drag to move' },
+    { id:6, x:720, y:60,  w:220, h:100, text:'The canvas never ends: scroll or Space+drag to pan, Ctrl+scroll to zoom' },
+  ], links: [
+    { id:1, from:1, fa:'e', to:2, ta:'w', arrow:true },
+    { id:2, from:2, fa:'s', to:3, ta:'n', arrow:true },
+    { id:3, from:3, fa:'e', to:4, ta:'w', arrow:false },
+    { id:4, from:3, fa:'w', to:5, ta:'e', arrow:true },
+    { id:5, from:2, fa:'e', to:6, ta:'w', arrow:true },
+  ]};
+}
+// Example boxes sit on the 22px grid
+function onGrid(s){ s.boxes.forEach(b => ['x','y','w','h'].forEach(k => b[k] = Math.round(b[k]/22)*22)); return s; }
+function load(){
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && Array.isArray(s.boxes) && Array.isArray(s.links)) return s; } catch(e){}
+  return onGrid(sample());
+}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} scheduleUrl(); }
+
+/* ---------- board in the URL (compressed, like Mermaid's share links) ---------- */
+// The whole board is packed into a compact array, deflated, and base64url-encoded into the #hash.
+const boardOnly = s => [s.nextId, s.boxes.map(b => [b.id, b.x, b.y, b.w, b.h, b.text]), s.links.map(l => [l.id, l.from, l.fa, l.to, l.ta, l.arrow ? 1 : 0, l.curve ? 1 : 0])];
+const sameBoard = (a, b) => JSON.stringify(boardOnly(a)) === JSON.stringify(boardOnly(b));
+// Every setting travels with the board: theme, snap, auto-capitalise, line style, shortcuts panel
+const currentSettings = () => ({ t: theme, s: snap ? 1 : 0, c: autoCap ? 1 : 0, l: lineStyle === 'curved' ? 1 : 0,
+  h: document.body.classList.contains('help-open') ? 1 : 0, p: helpPinned ? 1 : 0 });
+const pack = s => JSON.stringify([1, ...boardOnly(s), currentSettings()]);
+function unpack(str){
+  const a = JSON.parse(str); if (!Array.isArray(a) || a[0] !== 1) return null;
+  return { nextId: a[1], example: false, settings: a[4] && typeof a[4] === 'object' ? a[4] : null,
+    boxes: a[2].map(([id, x, y, w, h, text]) => ({ id, x, y, w, h, text: String(text) })),
+    links: a[3].filter(l => A[l[2]] && A[l[4]]).map(([id, from, fa, to, ta, ar, cv]) => ({ id, from, fa, to, ta, arrow: !!ar, curve: !!cv })) };
+}
+const b64u = bytes => { let s = ''; for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const unb64u = t => { const s = atob(t.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - t.length % 4) % 4)); return Uint8Array.from(s, c => c.charCodeAt(0)); };
+const pipe = async (bytes, stream) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+async function encodeBoard(s){
+  const raw = new TextEncoder().encode(pack(s));
+  if (window.CompressionStream) try { return 'x1.' + b64u(await pipe(raw, new CompressionStream('deflate-raw'))); } catch(e){}
+  return 'u1.' + b64u(raw);
+}
+async function decodeBoard(tok){
+  try {
+    const kind = tok.slice(0, 3); let bytes = unb64u(tok.slice(3));
+    if (kind === 'x1.') bytes = await pipe(bytes, new DecompressionStream('deflate-raw'));
+    else if (kind !== 'u1.') return null;
+    return unpack(new TextDecoder().decode(bytes));
+  } catch(e){ return null; }
+}
+let lastToken = '', urlTimer = 0, settingsTouched = false;
+function scheduleUrl(){
+  clearTimeout(urlTimer);
+  urlTimer = setTimeout(async () => {
+    if (!state || (state.example && hIdx === 0 && !settingsTouched)) return; // keep the URL clean until something changes
+    const t = await encodeBoard(state); lastToken = t;
+    try { window.history.replaceState(null, '', '#' + t); } catch(e){}
+  }, 250);
+}
+function shareLink(){
+  let base = null;
+  try { if (window.top === window) base = location.href.split('#')[0]; } catch(e){}
+  if (!base && /\/artifact\//.test(document.referrer || '')) base = document.referrer.split('#')[0];
+  return base ? base + '#' + lastToken : null;
+}
+function copyText(text){
+  const fallback = () => { const ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch(e){} ta.remove(); return ok; };
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(() => true, fallback);
+  return Promise.resolve(fallback());
+}
+window.addEventListener('hashchange', async () => {
+  const t = location.hash.slice(1); if (!t || t === lastToken) return;
+  const s = await decodeBoard(t); if (!s) return;
+  if (editing) endEdit();
+  const st = s.settings; delete s.settings;
+  state = s; lastToken = t; history = [JSON.stringify(state)]; hIdx = 0; setSel(); armed = null;
+  applySettings(st);
+  places = []; pIdx = 0; savePlaces(); updatePlaceButtons();
+  renderAll(); updateButtons(); save(); fitBoard(); toast('Opened the board from the link');
+});
+function saveView(){ try { localStorage.setItem(VKEY, JSON.stringify(view)); } catch(e){} }
+try { const v = JSON.parse(localStorage.getItem(VKEY)); if (v && isFinite(v.x) && isFinite(v.y) && v.z > 0) view = v; } catch(e){}
+
+const box = id => state.boxes.find(b => b.id === id);
+function setSel(b = [], l = []){ sel = { boxes:new Set(b), links:new Set(l) }; }
+const hasSel = () => sel.boxes.size + sel.links.size > 0;
+const onlyBox = () => sel.boxes.size === 1 && !sel.links.size ? [...sel.boxes][0] : null;
+const anchorPt = (b, k) => ({ x: b.x + A[k][0]*b.w, y: b.y + A[k][1]*b.h });
+// Lines leave and enter each dot in its outward direction, then route around both boxes
+// with right-angle steps and rounded corners (like draw.io's orthogonal connectors)
+const NRM = {}; for (const k in A){ const x = A[k][0]*2 - 1, y = A[k][1]*2 - 1, l = Math.hypot(x, y); NRM[k] = [x/l, y/l]; }
+const STUB = 24, CLEAR = 10, RAD = 14;
+const grow = (b, m) => ({ x: b.x - m, y: b.y - m, w: b.w + 2*m, h: b.h + 2*m });
+function simplify(P){
+  const out = [];
+  for (const p of P){
+    const l = out[out.length - 1];
+    if (l && Math.abs(l.x - p.x) < 0.5 && Math.abs(l.y - p.y) < 0.5) continue;
+    if (out.length >= 2){ const a = out[out.length - 2];
+      if ((Math.abs(a.x - l.x) < 0.5 && Math.abs(l.x - p.x) < 0.5) || (Math.abs(a.y - l.y) < 0.5 && Math.abs(l.y - p.y) < 0.5)){ out[out.length - 1] = p; continue; } }
+    out.push(p);
+  }
+  return out;
+}
+// Orthogonal router: shortest path with few bends on a grid built from the box edges, avoiding every box
+const BEND = 40;
+const DIRS = [[1,0],[-1,0],[0,1],[0,-1]];
+const dirOf = n => Math.abs(n[0]) >= Math.abs(n[1]) ? (n[0] > 0 ? 0 : 1) : (n[1] > 0 ? 2 : 3);
+function axisList(vals){
+  const v = [...new Set(vals.map(x => Math.round(x*2)/2))].sort((a, b) => a - b), out = [];
+  for (let i = 0; i < v.length; i++){ out.push(v[i]); if (i < v.length - 1) out.push((v[i] + v[i+1])/2); }
+  return out;
+}
+function route(p, pk, q, qk, sb, tb){
+  const p1 = { x: p.x + NRM[pk][0]*STUB, y: p.y + NRM[pk][1]*STUB };
+  const q1 = qk ? { x: q.x + NRM[qk][0]*STUB, y: q.y + NRM[qk][1]*STUB } : q;
+  // Boxes near the connection (plus the two ends) are obstacles
+  const M = 260, lx = Math.min(p1.x, q1.x) - M, hx = Math.max(p1.x, q1.x) + M, ly = Math.min(p1.y, q1.y) - M, hy = Math.max(p1.y, q1.y) + M;
+  const near = state.boxes.filter(b => b === sb || b === tb || (b.x < hx && b.x + b.w > lx && b.y < hy && b.y + b.h > ly));
+  const obs = near.map(b => grow(b, CLEAR))
+    .filter(o => !(p1.x > o.x && p1.x < o.x + o.w && p1.y > o.y && p1.y < o.y + o.h) && !(q1.x > o.x && q1.x < o.x + o.w && q1.y > o.y && q1.y < o.y + o.h));
+  const xsv = [p1.x, q1.x], ysv = [p1.y, q1.y];
+  for (const b of near){ xsv.push(b.x - STUB, b.x + b.w + STUB); ysv.push(b.y - STUB, b.y + b.h + STUB); }
+  const xs = axisList(xsv), ys = axisList(ysv), nx = xs.length, ny = ys.length;
+  const ix = v => xs.indexOf(Math.round(v*2)/2), iy = v => ys.indexOf(Math.round(v*2)/2);
+  const sx = ix(p1.x), sy = iy(p1.y), gx = ix(q1.x), gy = iy(q1.y);
+  const inside = (x, y) => obs.some(o => x > o.x && x < o.x + o.w && y > o.y && y < o.y + o.h);
+  const blocked = (ax, ay, bx, by) => obs.some(o => ax === bx
+    ? (ax > o.x && ax < o.x + o.w && Math.max(ay, by) > o.y && Math.min(ay, by) < o.y + o.h)
+    : (ay > o.y && ay < o.y + o.h && Math.max(ax, bx) > o.x && Math.min(ax, bx) < o.x + o.w));
+  if (sx >= 0 && sy >= 0 && gx >= 0 && gy >= 0){
+    const startDir = dirOf(NRM[pk]), endDir = qk ? dirOf([-NRM[qk][0], -NRM[qk][1]]) : -1;
+    const N = nx*ny*4, dist = new Float64Array(N).fill(Infinity), prev = new Int32Array(N).fill(-1);
+    const heap = []; // [cost, state]
+    const push = (c, st) => { heap.push([c, st]); let i = heap.length - 1;
+      while (i){ const pa = (i - 1) >> 1; if (heap[pa][0] <= heap[i][0]) break; [heap[pa], heap[i]] = [heap[i], heap[pa]]; i = pa; } };
+    const pop = () => { const top = heap[0], last = heap.pop();
+      if (heap.length){ heap[0] = last; let i = 0; for (;;){ const l = 2*i + 1, r = l + 1; let m = i;
+        if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
+        if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } }
+      return top; };
+    const s0 = (sy*nx + sx)*4 + startDir; dist[s0] = 0; push(0, s0);
+    let goal = -1, goalCost = Infinity;
+    while (heap.length){
+      const [c, st] = pop(); if (c > dist[st]) continue; if (c >= goalCost) break;
+      const d = st & 3, node = st >> 2, x = node % nx, y = (node / nx) | 0;
+      if (x === gx && y === gy){ const fc = c + (endDir >= 0 && d !== endDir ? BEND : 0); if (fc < goalCost){ goalCost = fc; goal = st; } continue; }
+      for (let nd = 0; nd < 4; nd++){
+        const tx = x + DIRS[nd][0], ty = y + DIRS[nd][1]; if (tx < 0 || ty < 0 || tx >= nx || ty >= ny) continue;
+        if (!(tx === gx && ty === gy) && inside(xs[tx], ys[ty])) continue;
+        if (blocked(xs[x], ys[y], xs[tx], ys[ty])) continue;
+        const ncost = c + Math.abs(xs[tx] - xs[x]) + Math.abs(ys[ty] - ys[y]) + (nd !== d ? BEND : 0);
+        const ns = (ty*nx + tx)*4 + nd;
+        if (ncost < dist[ns]){ dist[ns] = ncost; prev[ns] = st; push(ncost, ns); }
+      }
+    }
+    if (goal >= 0){
+      const path = []; for (let st = goal; st >= 0; st = prev[st]){ const node = st >> 2; path.push({ x: xs[node % nx], y: ys[(node / nx) | 0] }); }
+      path.reverse();
+      return simplify([p, ...path, q]);
+    }
+  }
+  return routeSimple(p, p1, q, q1, sb, tb);
+}
+// Fallback when the grid search finds nothing (e.g. boxes packed tightly)
+function routeSimple(p, p1, q, q1, sb, tb){
+  const obs = [grow(sb, CLEAR)]; if (tb) obs.push(grow(tb, CLEAR));
+  const all = tb ? bounds([sb, tb]) : sb;
+  const L = all.x - STUB, R = all.x + all.w + STUB, T = all.y - STUB, B = all.y + all.h + STUB;
+  const mx = (p1.x + q1.x)/2, my = (p1.y + q1.y)/2;
+  const mids = [
+    [{ x:p1.x, y:q1.y }], [{ x:q1.x, y:p1.y }],
+    [{ x:mx, y:p1.y }, { x:mx, y:q1.y }], [{ x:p1.x, y:my }, { x:q1.x, y:my }],
+    [{ x:L, y:p1.y }, { x:L, y:q1.y }], [{ x:R, y:p1.y }, { x:R, y:q1.y }],
+    [{ x:p1.x, y:T }, { x:q1.x, y:T }], [{ x:p1.x, y:B }, { x:q1.x, y:B }],
+  ];
+  let best = null, bestScore = Infinity;
+  for (const m of mids){
+    const mid = [p1, ...m, q1];
+    let len = 0, bad = 0;
+    for (let i = 1; i < mid.length; i++){
+      len += Math.abs(mid[i].x - mid[i-1].x) + Math.abs(mid[i].y - mid[i-1].y);
+      for (const o of obs) if (segHitsRect(mid[i-1], mid[i], o)) bad++;
+    }
+    const score = len + mid.length*30 + bad*100000;
+    if (score < bestScore){ bestScore = score; best = mid; }
+  }
+  return simplify([p, ...best, q]);
+}
+function roundedPath(P, RAD = 14){
+  let d = `M${P[0].x},${P[0].y}`;
+  for (let i = 1; i < P.length - 1; i++){
+    const a = P[i-1], b = P[i], c = P[i+1];
+    const l1 = Math.hypot(b.x - a.x, b.y - a.y), l2 = Math.hypot(c.x - b.x, c.y - b.y);
+    const r = Math.min(RAD, l1/2, l2/2);
+    const s = { x: b.x - (b.x - a.x)/l1*r, y: b.y - (b.y - a.y)/l1*r }, e = { x: b.x + (c.x - b.x)/l2*r, y: b.y + (c.y - b.y)/l2*r };
+    d += ` L${s.x},${s.y} Q${b.x},${b.y} ${e.x},${e.y}`;
+  }
+  const z = P[P.length - 1]; return d + ` L${z.x},${z.y}`;
+}
+// Two line styles: "angled" follows the grid with rounded corners; "curved" is a smooth arc.
+// A curved line is a single arc when that arc is clear of other boxes, otherwise a smooth curve along the routed path.
+function arcCurve(p, pk, q, qk){
+  const c = Math.max(40, Math.min(220, Math.hypot(q.x - p.x, q.y - p.y)*0.5));
+  const c1 = { x: p.x + NRM[pk][0]*c, y: p.y + NRM[pk][1]*c }, c2 = { x: q.x + NRM[qk][0]*c, y: q.y + NRM[qk][1]*c };
+  const P = [p, c1, c2, q], pts = [];
+  for (let i = 0; i <= 24; i++){ const t = i/24, u = 1 - t;
+    pts.push({ x: u*u*u*P[0].x + 3*u*u*t*P[1].x + 3*u*t*t*P[2].x + t*t*t*P[3].x, y: u*u*u*P[0].y + 3*u*u*t*P[1].y + 3*u*t*t*P[2].y + t*t*t*P[3].y }); }
+  return { d: `M${p.x},${p.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${q.x},${q.y}`, pts };
+}
+function arcIsClear(pts, a, b){
+  const obs = state.boxes.map(x => ({ o: grow(x, x === a || x === b ? -2 : CLEAR), end: x === a || x === b }));
+  for (let i = 1; i < pts.length; i++)
+    for (const { o } of obs) if (segHitsRect(pts[i-1], pts[i], o)) return false;
+  return true;
+}
+function linkGeom(a, ak, b, bk, curved){
+  if (curved && b){
+    const arc = arcCurve(anchorPt(a, ak), ak, anchorPt(b, bk), bk);
+    if (arcIsClear(arc.pts, a, b)) return arc;
+  }
+  const pts = route(anchorPt(a, ak), ak, b ? anchorPt(b, bk) : null, bk, a, b);
+  return { d: curved ? roundedPath(pts, Infinity) : roundedPath(pts), pts };
+}
+let lineStyle = 'angled';
+try { if (localStorage.getItem('explainer.linestyle') === 'curved') lineStyle = 'curved'; } catch(e){}
+function setLineStyle(style){
+  lineStyle = style; try { localStorage.setItem('explainer.linestyle', style); } catch(e){} settingChanged();
+  const ids = [...sel.links];
+  if (ids.length){ state.links.forEach(l => { if (sel.links.has(l.id)) l.curve = style === 'curved'; }); renderLinks(); commit(); }
+  updateStyleButtons();
+  toast(ids.length ? `${ids.length > 1 ? ids.length + ' lines' : 'Line'} set to ${style}. New lines will be ${style} too.` : `New lines will be ${style}`);
+}
+function updateStyleButtons(){
+  const ls = state ? state.links.filter(l => sel.links.has(l.id)) : [];
+  const cur = ls.length ? (ls.every(l => l.curve) ? 'curved' : ls.every(l => !l.curve) ? 'angled' : null) : lineStyle;
+  const a = $('lsAngled'), c = $('lsCurved'); if (!a) return;
+  a.setAttribute('aria-pressed', cur === 'angled'); c.setAttribute('aria-pressed', cur === 'curved');
+}
+function pt(e){ const r = viewport.getBoundingClientRect(); return { x: (e.clientX - r.left - view.x)/view.z, y: (e.clientY - r.top - view.y)/view.z }; }
+
+/* ---------- view: infinite pan + zoom ---------- */
+function applyView(){
+  world.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.z})`;
+  const g = 22*view.z;
+  viewport.style.backgroundSize = `${g}px ${g}px`;
+  viewport.style.backgroundPosition = `${view.x - g/2}px ${view.y - g/2}px`;
+  $('zoomBtn').textContent = Math.round(view.z*100) + '%';
+  saveView();
+}
+function panBy(dx, dy){ view.x += dx; view.y += dy; applyView(); }
+function zoomAt(nz, sx, sy){
+  nz = Math.min(3, Math.max(0.2, nz));
+  const wx = (sx - view.x)/view.z, wy = (sy - view.y)/view.z;
+  view.z = nz; view.x = sx - wx*nz; view.y = sy - wy*nz; applyView();
+}
+function animateView(to){
+  cancelAnimationFrame(viewAnim);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches){ view = to; applyView(); return; }
+  const from = { ...view }, t0 = performance.now(), D = 280;
+  const step = now => { const k = Math.min(1, (now - t0)/D), e = 1 - Math.pow(1 - k, 3);
+    view = { x: from.x + (to.x - from.x)*e, y: from.y + (to.y - from.y)*e, z: from.z + (to.z - from.z)*e }; applyView();
+    if (k < 1) viewAnim = requestAnimationFrame(step); };
+  viewAnim = requestAnimationFrame(step);
+}
+function visibleRect(){ return { x: -view.x/view.z, y: -view.y/view.z, w: viewport.clientWidth/view.z, h: viewport.clientHeight/view.z }; }
+function bounds(rects){
+  if (!rects.length) return null;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const r of rects){ x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h); }
+  return { x:x0, y:y0, w:x1-x0, h:y1-y0 };
+}
+// Bring a world-space area into view if any part of it is off screen
+function reveal(r){
+  const v = visibleRect(), m = 40/view.z;
+  if (r.x >= v.x + m && r.y >= v.y + m && r.x + r.w <= v.x + v.w - m && r.y + r.h <= v.y + v.h - m) return;
+  let z = view.z;
+  const fitZ = Math.min(viewport.clientWidth/(r.w + 160), viewport.clientHeight/(r.h + 160));
+  if (fitZ < z) z = Math.max(0.2, fitZ);
+  animateView({ z, x: viewport.clientWidth/2 - (r.x + r.w/2)*z, y: viewport.clientHeight/2 - (r.y + r.h/2)*z });
+}
+function fitBoard(){
+  const r = bounds(state.boxes); if (!r) { animateView({ x:40, y:30, z:1 }); return; }
+  const z = Math.max(0.2, Math.min(1.25, viewport.clientWidth/(r.w + 120), viewport.clientHeight/(r.h + 120)));
+  animateView({ z, x: viewport.clientWidth/2 - (r.x + r.w/2)*z, y: viewport.clientHeight/2 - (r.y + r.h/2)*z });
+}
+
+viewport.addEventListener('wheel', e => {
+  e.preventDefault();
+  const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? viewport.clientHeight : 1;
+  let dx = e.deltaX*unit, dy = e.deltaY*unit;
+  if (e.ctrlKey || e.metaKey){
+    const r = viewport.getBoundingClientRect(), d = Math.max(-60, Math.min(60, dy));
+    zoomAt(view.z*Math.exp(-d*0.01), e.clientX - r.left, e.clientY - r.top); return;
+  }
+  if (e.shiftKey && !dx){ dx = dy; dy = 0; }
+  panBy(-dx, -dy);
+}, { passive:false });
+viewport.addEventListener('scroll', () => { viewport.scrollTop = 0; viewport.scrollLeft = 0; });
+viewport.addEventListener('contextmenu', e => e.preventDefault());
+
+/* ---------- rendering ---------- */
+function makeEl(b){
+  const el = document.createElement('div'); el.className = 'box'; el.dataset.id = b.id;
+  const t = document.createElement('div'); t.className = 'txt'; t.spellcheck = false; t.textContent = b.text;
+  t.setAttribute('autocapitalize', autoCap ? 'sentences' : 'off');
+  el.appendChild(t);
+  for (const k in A){ const h = document.createElement('div'); h.className = 'h'; h.dataset.a = k;
+    h.style.left = A[k][0]*100 + '%'; h.style.top = A[k][1]*100 + '%'; el.appendChild(h); }
+  t.addEventListener('input', () => {
+    const cur = box(b.id); if (!cur) return;
+    cur.text = readText(t); fit(cur); renderLinks(); save();
+    clearTimeout(typeTimer); typeTimer = setTimeout(commit, TYPE_PAUSE); // each pause in typing = one undo step
+  });
+  t.addEventListener('beforeinput', e => {
+    // Auto-capitalise: a lowercase letter typed at the start of the box, a line, or a sentence
+    if (autoCap && e.inputType === 'insertText' && e.data && /^\p{Ll}$/u.test(e.data)){
+      const sl = getSelection();
+      if (sl.rangeCount){
+        const r = document.createRange(); r.selectNodeContents(t); r.setEnd(sl.getRangeAt(0).startContainer, sl.getRangeAt(0).startOffset);
+        if (/(^|[.!?]\s+|\n\s*)$/.test(r.toString())){ e.preventDefault(); document.execCommand('insertText', false, e.data.toUpperCase()); return; }
+      }
+    }
+    if (e.inputType === 'historyUndo'){ e.preventDefault(); undo(); }
+    else if (e.inputType === 'historyRedo'){ e.preventDefault(); redo(); }
+  });
+  t.addEventListener('blur', () => { if (editing === b.id) endEdit(); });
+  if (CE === 'true') t.addEventListener('paste', e => { e.preventDefault();
+    document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain')); });
+  return el;
+}
+function place(el, b){ el.style.left = b.x+'px'; el.style.top = b.y+'px'; el.style.width = b.w+'px'; el.style.height = b.h+'px'; }
+function renderAll(){
+  layer.innerHTML = ''; els.clear();
+  for (const b of state.boxes){ const el = makeEl(b); place(el, b); layer.appendChild(el); els.set(b.id, el); }
+  renderSel();
+  $('exampleTag').hidden = !state.example;
+}
+function renderLinks(extra){
+  let s = ''; const pts = extra ? extra.slice() : [];
+  for (const l of state.links){
+    const a = box(l.from), b = box(l.to); if (!a || !b) continue;
+    const c = linkGeom(a, l.fa, b, l.ta, l.curve); pts.push(...c.pts);
+    const d = c.d, on = sel.links.has(l.id);
+    s += `<path class="ln${on?' sel':''}" d="${d}"${l.arrow ? ` marker-end="url(#${on?'ahs':'ah'})"` : ''}/>`
+       + `<path class="hit" data-link="${l.id}" d="${d}"/>`;
+  }
+  linkG.innerHTML = s;
+  // Size the SVG to just cover the lines, wherever they are on the infinite canvas
+  const r = bounds(pts.map(p => ({ x:p.x, y:p.y, w:0, h:0 }))) || { x:0, y:0, w:0, h:0 };
+  const x = Math.floor(r.x - 40), y = Math.floor(r.y - 40), w = Math.ceil(r.w + 80), h = Math.ceil(r.h + 80);
+  svg.style.left = x+'px'; svg.style.top = y+'px';
+  svg.setAttribute('width', w); svg.setAttribute('height', h); svg.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
+}
+function renderSel(){
+  updateStyleButtons();
+  for (const [id, el] of els){
+    el.classList.toggle('sel', sel.boxes.has(id));
+    el.classList.toggle('editing', editing === id);
+  }
+  document.querySelectorAll('.h.armed').forEach(h => h.classList.remove('armed'));
+  if (armed){ const [id, k] = armed.split(':'); const el = els.get(+id); el && el.querySelector(`.h[data-a="${k}"]`).classList.add('armed'); }
+  renderLinks();
+}
+
+// Snap to grid: a world value rounded to the nearest dot when the toggle is on
+const G = 22; let snap = false;
+snap = true; // on by default
+try { snap = localStorage.getItem('explainer.snap') !== 'off'; } catch(e){}
+const sn = v => snap ? Math.round(v/G)*G : Math.round(v);
+let autoCap = true;
+try { autoCap = localStorage.getItem('explainer.autocap') !== 'off'; } catch(e){}
+function setCap(on){
+  autoCap = on; $('capBtn').setAttribute('aria-checked', on);
+  els.forEach(el => el.firstChild.setAttribute('autocapitalize', on ? 'sentences' : 'off'));
+  try { localStorage.setItem('explainer.autocap', on ? 'on' : 'off'); } catch(e){}
+  settingChanged();
+}
+function setSnap(on){
+  snap = on; $('snapBtn').setAttribute('aria-checked', on);
+  try { localStorage.setItem('explainer.snap', on ? 'on' : 'off'); } catch(e){}
+  settingChanged();
+}
+function settingChanged(){ if (typeof state !== 'undefined' && state && booted){ settingsTouched = true; scheduleUrl(); } }
+let booted = false;
+/* ---------- theme: Auto (follows the system / host), Light, Dark ---------- */
+const hostTheme = document.documentElement.getAttribute('data-theme');
+let theme = 'auto';
+try { const t = localStorage.getItem('explainer.theme'); if (t === 'light' || t === 'dark') theme = t; } catch(e){}
+const THEME_ICON = {
+  auto: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor"/></svg>',
+  light: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M3 13l1.4-1.4M11.6 4.4L13 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  dark: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 10.2A6 6 0 0 1 5.8 2.5a6 6 0 1 0 7.7 7.7z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>'
+};
+function setTheme(t){
+  theme = t;
+  const root = document.documentElement;
+  if (t === 'auto'){ if (hostTheme) root.setAttribute('data-theme', hostTheme); else root.removeAttribute('data-theme'); }
+  else root.setAttribute('data-theme', t);
+  const b = $('themeBtn'); if (b){ b.innerHTML = THEME_ICON[t] + '<span>' + { auto:'Auto', light:'Light', dark:'Dark' }[t] + '</span>';
+    b.title = 'Theme: ' + { auto:'follows your system', light:'light', dark:'dark' }[t] + ' (click to change)'; }
+  try { localStorage.setItem('explainer.theme', t); } catch(e){}
+  settingChanged();
+}
+function applySettings(st){
+  if (!st) return;
+  if (st.t === 'auto' || st.t === 'light' || st.t === 'dark') setTheme(st.t);
+  if (st.s != null) setSnap(!!st.s);
+  if (st.c != null) setCap(!!st.c);
+  if (st.l != null){ lineStyle = st.l ? 'curved' : 'angled'; try { localStorage.setItem('explainer.linestyle', lineStyle); } catch(e){} if (typeof updateStyleButtons === 'function') updateStyleButtons(); }
+  if (st.p != null && typeof setPin === 'function') setPin(!!st.p);
+  if (st.h != null && typeof setHelp === 'function') setHelp(!!st.h);
+}
+function fit(b){
+  const el = els.get(b.id); if (!el) return; const t = el.firstChild;
+  for (let i = 0; i < 10; i++){
+    if (t.scrollHeight <= b.h - PAD*2 - 3 + 0.5) break;
+    const nw = Math.max(sn(b.w*GROW), b.w + 1), nh = Math.max(sn(b.h*GROW), b.h + 1);
+    b.x = sn(b.x - (nw - b.w)/2); b.y = sn(b.y - (nh - b.h)/2);
+    b.w = nw; b.h = nh; place(el, b);
+  }
+}
+const readText = t => t.innerText.replace(/\n$/, '');
+
+/* ---------- history ---------- */
+function commit(){
+  clearTimeout(typeTimer);
+  const s = JSON.stringify(state);
+  if (s === history[hIdx]) return;
+  const before = history[hIdx];
+  history = history.slice(0, hIdx + 1); history.push(s); hIdx++;
+  if (history.length > 300){ history.shift(); hIdx--; }
+  if (before) try { recordPlace(diff(JSON.parse(before), state)); } catch(e){}
+  save(); updateButtons();
+}
+
+/* ---------- edit places: jump back and forth between where you last changed things ---------- */
+const PKEY = 'explainer.places.v1';
+let places = [], pIdx = 0; // pIdx === places.length means "at the newest edit"
+try { const v = JSON.parse(localStorage.getItem(PKEY)); if (Array.isArray(v)) places = v.filter(x => x && x.rect); } catch(e){}
+pIdx = places.length;
+function savePlaces(){ try { localStorage.setItem(PKEY, JSON.stringify(places.slice(-60))); } catch(e){} }
+function recordPlace(d){
+  if (!d || !d.rect) return;
+  const entry = { ids: d.ids, rect: d.rect }, last = places[places.length - 1];
+  // Repeated edits to the same box (typing, nudging) stay one place
+  if (last && last.ids.length && last.ids.join() === entry.ids.join()) places[places.length - 1] = entry;
+  else places.push(entry);
+  if (places.length > 60) places.shift();
+  pIdx = places.length; savePlaces(); updatePlaceButtons();
+}
+function placeRect(pl){
+  const live = pl.ids.map(box).filter(Boolean);
+  return live.length ? bounds(live) : pl.rect;
+}
+function goPlace(step){
+  if (!places.length){ toast('No edits yet'); return; }
+  let i = pIdx + step;
+  if (pIdx === places.length && step < 0){
+    // First "back": go to the newest edit, unless it is already what you're looking at
+    i = places.length - 1;
+    const r = placeRect(places[i]), v = visibleRect();
+    const cx = r.x + r.w/2, cy = r.y + r.h/2;
+    if (places.length > 1 && Math.abs(cx - (v.x + v.w/2)) < 40/view.z && Math.abs(cy - (v.y + v.h/2)) < 40/view.z) i--;
+  }
+  if (i < 0 || i >= places.length){ toast(step < 0 ? 'This is the oldest edit place' : 'This is the newest edit place'); return; }
+  if (editing) endEdit();
+  pIdx = i; const pl = places[i], r = placeRect(pl);
+  let z = view.z; const fitZ = Math.min(viewport.clientWidth/(r.w + 160), viewport.clientHeight/(r.h + 160)); if (fitZ < z) z = Math.max(0.2, fitZ);
+  animateView({ z, x: viewport.clientWidth/2 - (r.x + r.w/2)*z, y: viewport.clientHeight/2 - (r.y + r.h/2)*z });
+  const live = pl.ids.filter(id => box(id));
+  setSel(live); armed = null; renderSel();
+  for (const id of live){ const el = els.get(id); if (el){ el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } }
+  toast(`Edit place ${i + 1} of ${places.length}${live.length || !pl.ids.length ? '' : ' (that box was deleted)'}`);
+  updatePlaceButtons();
+}
+function updatePlaceButtons(){
+  const b = $('placeBack'), f = $('placeFwd'); if (!b) return;
+  b.disabled = !places.length || pIdx === 0;
+  f.disabled = pIdx >= places.length - 1;
+}
+// Find what differs between two snapshots so undo/redo can show it
+function diff(a, b){
+  const rects = [], ids = [];
+  const am = new Map(a.boxes.map(x => [x.id, x])), bm = new Map(b.boxes.map(x => [x.id, x]));
+  for (const id of new Set([...am.keys(), ...bm.keys()])){
+    const p = am.get(id), q = bm.get(id);
+    if (JSON.stringify(p) !== JSON.stringify(q)){ if (q){ rects.push(q); ids.push(id); } else rects.push(p); }
+  }
+  const al = new Map(a.links.map(x => [x.id, x])), bl = new Map(b.links.map(x => [x.id, x]));
+  for (const id of new Set([...al.keys(), ...bl.keys()])){
+    const p = al.get(id), q = bl.get(id);
+    if (JSON.stringify(p) !== JSON.stringify(q)){
+      const l = q || p, s = q ? b : a;
+      for (const bid of [l.from, l.to]){ const bx = s.boxes.find(x => x.id === bid) || b.boxes.find(x => x.id === bid); if (bx) rects.push(bx); }
+    }
+  }
+  return { rect: bounds(rects), ids };
+}
+function restore(i){
+  const wasEditing = editing;
+  if (editing){ const b = box(editing), el = els.get(editing); if (b && el) el.firstChild.contentEditable = 'false'; editing = null; getSelection().removeAllRanges(); }
+  const before = JSON.parse(history[hIdx]);
+  hIdx = i; state = JSON.parse(history[hIdx]); armed = null;
+  const d = diff(before, state);
+  setSel(d.ids);
+  renderAll(); save(); updateButtons();
+  if (wasEditing && box(wasEditing)) startEdit(box(wasEditing)); // keep typing in the same box
+  for (const id of d.ids){ const el = els.get(id); if (el){ el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } }
+  if (d.rect) reveal(d.rect);
+}
+function undo(){
+  if (editing){ const b = box(editing); if (b) b.text = readText(els.get(editing).firstChild); }
+  commit(); // capture any typing not yet recorded, so it is undone first
+  if (hIdx > 0) restore(hIdx - 1); else toast('Nothing to undo');
+}
+function redo(){
+  commit();
+  if (hIdx < history.length - 1) restore(hIdx + 1); else toast('Nothing to redo');
+}
+function updateButtons(){
+  $('undoBtn').disabled = hIdx <= 0;
+  $('redoBtn').disabled = hIdx >= history.length - 1;
+}
+
+/* ---------- editing ---------- */
+function caretAt(x, y){
+  let r = null;
+  if (document.caretPositionFromPoint){ const p = document.caretPositionFromPoint(x, y);
+    if (p){ r = document.createRange(); r.setStart(p.offsetNode, p.offset); } }
+  else if (document.caretRangeFromPoint) r = document.caretRangeFromPoint(x, y);
+  return r;
+}
+// Is the pointer over the box's actual text (not the empty space around it)?
+function onText(t, x, y){
+  const m = 8;
+  const inR = r => x >= r.left - m && x <= r.right + m && y >= r.top - m/2 && y <= r.bottom + m/2;
+  if (!t.textContent.trim()){ const r = t.getBoundingClientRect(); return inR({ left:r.left + r.width*.3, right:r.right - r.width*.3, top:r.top, bottom:r.bottom }); }
+  const range = document.createRange(); range.selectNodeContents(t);
+  for (const r of range.getClientRects()) if (inR(r)) return true;
+  return false;
+}
+function startEdit(b, x, y){
+  if (editing && editing !== b.id) endEdit();
+  const el = els.get(b.id), t = el.firstChild;
+  editing = b.id; setSel([b.id]);
+  t.contentEditable = CE; t.focus({ preventScroll:true });
+  let r = x != null ? caretAt(x, y) : null;
+  if (!r || !t.contains(r.startContainer)){ r = document.createRange(); r.selectNodeContents(t); r.collapse(false); }
+  r.collapse(true);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  renderSel();
+}
+function selectAllText(b){
+  if (editing !== b.id) startEdit(b);
+  const t = els.get(b.id).firstChild, r = document.createRange(); r.selectNodeContents(t);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+}
+function endEdit(){
+  if (!editing) return;
+  const b = box(editing), el = els.get(editing); editing = null;
+  if (b && el){ const t = el.firstChild; b.text = readText(t); t.contentEditable = 'false'; t.blur(); }
+  getSelection().removeAllRanges();
+  commit(); renderSel();
+}
+
+/* ---------- gestures ---------- */
+viewport.addEventListener('pointerdown', e => {
+  if (gesture) cancelGesture(); // a stale gesture from a missed release never survives a new press
+  if (!editing){ const s = getSelection(); if (s && s.rangeCount && !s.isCollapsed) s.removeAllRanges(); }
+  if (e.target.closest('header')) return;
+  if (e.button === 1 || e.button === 2 || (spaceDown && e.button === 0)) return startPan(e);
+  if (e.button !== 0) return;
+  const h = e.target.closest('.h'), bx = e.target.closest('.box'), hit = e.target.closest('.hit');
+  // A visible dot wins: pressing and dragging near it always draws a line
+  if (!e.shiftKey && e.pointerType !== 'touch'){
+    nearDot(e);
+    if (nearEl){ const bid = +nearEl.closest('.box').dataset.id, a = nearEl.dataset.a;
+      return nearLink != null ? downHandle(e, bid, a, dotDist(e, bid, a) <= 7, nearLink) : downHandle(e, bid, a, onDot(e, bid, a)); }
+  }
+  if (h && bx && onDot(e, +bx.dataset.id, h.dataset.a)) return downHandle(e, +bx.dataset.id, h.dataset.a);
+  if (bx) return downBox(e, +bx.dataset.id);
+  if (hit){
+    e.preventDefault(); endEdit(); focusBoard(); armed = null; const lid = +hit.dataset.link;
+    if (e.shiftKey){ sel.links.has(lid) ? sel.links.delete(lid) : sel.links.add(lid); } else setSel([], [lid]);
+    renderSel(); return;
+  }
+  downCanvas(e);
+});
+window.addEventListener('pointermove', e => {
+  lastEv = e;
+  // The button was released somewhere we never heard about (outside the frame, during a native drag, an alert…)
+  if (gesture && e.pointerType === 'mouse' && e.buttons === 0){ endGesture(e); return; }
+  if (gesture) gesture.move(e); else nearDot(e);
+});
+// A press counts as "on the dot" if it is right on it, or just outside the box; otherwise it belongs to the box
+function onDot(e, id, k){
+  const b = box(id), r = viewport.getBoundingClientRect(), q = anchorPt(b, k);
+  const sx = r.left + view.x + q.x*view.z, sy = r.top + view.y + q.y*view.z;
+  if (Math.hypot(sx - e.clientX, sy - e.clientY) <= 7) return true;
+  const p = pt(e); return !(p.x > b.x && p.x < b.x + b.w && p.y > b.y && p.y < b.y + b.h);
+}
+// Show a connection dot only when the pointer comes close to it
+let nearEl = null, nearLink = null;
+const EDGE_ZONE = 12; // px from a box's outline where the nearest dot appears
+function dotDist(e, id, k){ const b = box(id), r = viewport.getBoundingClientRect(), q = anchorPt(b, k);
+  return Math.hypot(r.left + view.x + q.x*view.z - e.clientX, r.top + view.y + q.y*view.z - e.clientY); }
+function nearDot(e){
+  let found = null;
+  if (e.pointerType !== 'touch' && !spaceDown){
+    const under = document.elementFromPoint(e.clientX, e.clientY), bx = under && under.closest && under.closest('.box');
+    if (bx){
+      const b = box(+bx.dataset.id), r = viewport.getBoundingClientRect();
+      // Near the box's outline (inside or just outside), the closest dot always shows; elsewhere only right next to a dot
+      const bl = r.left + view.x + b.x*view.z, bt = r.top + view.y + b.y*view.z, br = bl + b.w*view.z, bb = bt + b.h*view.z;
+      const inX = e.clientX >= bl && e.clientX <= br, inY = e.clientY >= bt && e.clientY <= bb;
+      const edgeDist = inX && inY ? Math.min(e.clientX - bl, br - e.clientX, e.clientY - bt, bb - e.clientY)
+        : Math.hypot(Math.max(bl - e.clientX, 0, e.clientX - br), Math.max(bt - e.clientY, 0, e.clientY - bb));
+      let best = edgeDist <= EDGE_ZONE ? Infinity : 16;
+      for (const k in A){ const q = anchorPt(b, k), d = Math.hypot(r.left + view.x + q.x*view.z - e.clientX, r.top + view.y + q.y*view.z - e.clientY);
+        if (d < best){ best = d; found = bx.querySelector(`.h[data-a="${k}"]`); } }
+    } else {
+      // Hovering a line: show whichever of its two end dots is closer
+      const hit = under && under.closest && under.closest('.hit');
+      const l = hit && state.links.find(x => x.id === +hit.dataset.link);
+      if (l){
+        const da = dotDist(e, l.from, l.fa), db = dotDist(e, l.to, l.ta);
+        const [id, k] = da <= db ? [l.from, l.fa] : [l.to, l.ta];
+        const el = els.get(id); found = el && el.querySelector(`.h[data-a="${k}"]`); nearLink = found ? l.id : null;
+      }
+    }
+  }
+  if (!found) nearLink = null;
+  if (found !== nearEl){ nearEl && nearEl.classList.remove('near'); found && found.classList.add('near'); nearEl = found; }
+}
+function endGesture(e){ if (!gesture) return; const g = gesture; gesture = null; try { g.up(e); } finally { cleanupGesture(); } }
+function cancelGesture(){ if (!gesture) return; const g = gesture; gesture = null; try { g.cancel && g.cancel(); } finally { cleanupGesture(); } }
+// Whatever happened, never leave a selection rectangle, preview line or drag state on screen
+function cleanupGesture(){
+  document.querySelectorAll('.draft').forEach(d => d.remove());
+  tmp.setAttribute('d', '');
+  document.querySelectorAll('.box.dragging, .box.target').forEach(b => b.classList.remove('dragging', 'target'));
+  document.querySelectorAll('.h.snap').forEach(h => h.classList.remove('snap'));
+  viewport.classList.remove('panning');
+  if (capId != null){ try { viewport.releasePointerCapture(capId); } catch(e){} capId = null; }
+  renderLinks();
+}
+window.addEventListener('pointerup', e => endGesture(e));
+window.addEventListener('pointercancel', () => cancelGesture());
+viewport.addEventListener('lostpointercapture', e => { if (gesture && e.pointerId === capId) endGesture(e); });
+window.addEventListener('blur', () => cancelGesture());
+document.addEventListener('visibilitychange', () => { if (document.hidden) cancelGesture(); });
+// No native drag-and-drop or text selection outside the box being edited
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('selectstart', e => { if (!(editing && e.target.closest && e.target.closest('.box.editing'))) e.preventDefault(); });
+let capId = null;
+
+// While drawing, moving or connecting near the edge, the canvas keeps scrolling
+function startAutoPan(e){ lastEv = e;
+  // Keep receiving this pointer even if it leaves the board or the frame
+  if (gesture && e.pointerType === 'mouse'){ try { viewport.setPointerCapture(e.pointerId); capId = e.pointerId; } catch(err){} } cancelAnimationFrame(raf); raf = requestAnimationFrame(autoPan); }
+function autoPan(){
+  if (!gesture || !gesture.auto || !lastEv){ raf = 0; return; }
+  const r = viewport.getBoundingClientRect(), m = 36, sp = 16; let dx = 0, dy = 0;
+  const x = lastEv.clientX, y = lastEv.clientY;
+  if (x < r.left + m) dx = sp*(1 - Math.max(0, x - r.left)/m); else if (x > r.right - m) dx = -sp*(1 - Math.max(0, r.right - x)/m);
+  if (y < r.top + m) dy = sp*(1 - Math.max(0, y - r.top)/m); else if (y > r.bottom - m) dy = -sp*(1 - Math.max(0, r.bottom - y)/m);
+  if (gesture.active && (dx || dy)){ panBy(dx, dy); gesture.move(lastEv); }
+  raf = requestAnimationFrame(autoPan);
+}
+
+// Presses on the board call preventDefault (no text selection), which also stops the browser
+// moving keyboard focus here; take focus explicitly so Backspace, Ctrl+A and friends always arrive.
+function focusBoard(){ if (document.activeElement !== viewport) viewport.focus({ preventScroll:true }); }
+function startPan(e){
+  e.preventDefault();
+  const sx = e.clientX, sy = e.clientY, ox = view.x, oy = view.y;
+  viewport.classList.add('panning');
+  gesture = {
+    move(ev){ view.x = ox + ev.clientX - sx; view.y = oy + ev.clientY - sy; applyView(); },
+    up(){ viewport.classList.remove('panning'); },
+    cancel(){ viewport.classList.remove('panning'); }
+  };
+}
+
+// Boxes and lines that touch a world-space rectangle
+function segHitsRect(p, q, r){
+  let t0 = 0, t1 = 1; const dx = q.x - p.x, dy = q.y - p.y;
+  const P = [-dx, dx, -dy, dy], Q = [p.x - r.x, r.x + r.w - p.x, p.y - r.y, r.y + r.h - p.y];
+  for (let i = 0; i < 4; i++){
+    if (P[i] === 0){ if (Q[i] < 0) return false; continue; }
+    const t = Q[i]/P[i];
+    if (P[i] < 0){ if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; }
+  }
+  return true;
+}
+function inRect(r){
+  const boxes = state.boxes.filter(b => b.x < r.x + r.w && b.x + b.w > r.x && b.y < r.y + r.h && b.y + b.h > r.y).map(b => b.id);
+  const links = state.links.filter(l => { const a = box(l.from), b = box(l.to);
+    if (!a || !b) return false;
+    const P = linkGeom(a, l.fa, b, l.ta, l.curve).pts;
+    for (let i = 1; i < P.length; i++) if (segHitsRect(P[i-1], P[i], r)) return true;
+    return false; }).map(l => l.id);
+  return { boxes, links };
+}
+function downCanvas(e){
+  e.preventDefault(); endEdit(); focusBoard(); if (!e.shiftKey) setSel(); armed = null; renderSel();
+  const s = pt(e); let draft = null, r = null, hit = null;
+  const base = { boxes:[...sel.boxes], links:[...sel.links] };
+  gesture = { auto:true, active:false,
+    move(ev){
+      const p = pt(ev);
+      r = { x:Math.min(s.x,p.x), y:Math.min(s.y,p.y), w:Math.abs(p.x-s.x), h:Math.abs(p.y-s.y) };
+      if (snap){ const x0 = sn(r.x), y0 = sn(r.y); r = { x:x0, y:y0, w:sn(r.x + r.w) - x0, h:sn(r.y + r.h) - y0 }; }
+      if (!draft && (r.w*view.z > 4 || r.h*view.z > 4)){ draft = document.createElement('div'); draft.className = 'draft'; world.appendChild(draft); this.active = true; }
+      if (!draft) return;
+      draft.style.left = r.x+'px'; draft.style.top = r.y+'px'; draft.style.width = r.w+'px'; draft.style.height = r.h+'px';
+      // Touching any box or line turns the drag into a selection instead of a new box
+      hit = inRect(r);
+      const any = hit.boxes.length + hit.links.length > 0;
+      draft.classList.toggle('marquee', any);
+      setSel([...base.boxes, ...hit.boxes], [...base.links, ...hit.links]); renderSel();
+    },
+    up(){
+      if (draft) draft.remove();
+      if (hit && hit.boxes.length + hit.links.length) return; // selection made
+      if (!r || r.w*view.z < 14 || r.h*view.z < 14) return;
+      const b = { id: state.nextId++, x:sn(r.x), y:sn(r.y), w:Math.max(snap ? 3*G : 60, sn(r.w)), h:Math.max(snap ? 2*G : 44, sn(r.h)), text:'' };
+      state.boxes.push(b);
+      const el = makeEl(b); place(el, b); layer.appendChild(el); els.set(b.id, el);
+      commit(); startEdit(b);
+    },
+    cancel(){ if (draft) draft.remove(); }
+  };
+  startAutoPan(e);
+}
+
+function downBox(e, id){
+  const b = box(id), el = els.get(id);
+  if (editing === id && e.target.closest('.txt') && !e.shiftKey) return; // select text like a normal editor
+  e.preventDefault();
+  if (editing) endEdit();
+  focusBoard();
+  armed = null;
+  if (layer.lastChild !== el) layer.appendChild(el); // bring to front (re-inserting would break double-click)
+  const shift = e.shiftKey, wasSel = sel.boxes.has(id);
+  const hitText = !shift && onText(el.firstChild, e.clientX, e.clientY);
+  if (shift){ if (!wasSel) sel.boxes.add(id); }
+  else if (!wasSel) setSel([id]);
+  renderSel();
+  // Dragging any selected box moves the whole selection
+  const bx0 = b.x, by0 = b.y;
+  const orig = [...sel.boxes].map(i => box(i)).filter(Boolean).map(x => [x, x.x, x.y]);
+  const s = pt(e); let moved = false;
+  gesture = { auto:true, active:false,
+    move(ev){
+      const p = pt(ev), dx = p.x - s.x, dy = p.y - s.y;
+      if (!moved && Math.hypot(dx, dy)*view.z < 4) return;
+      moved = true; this.active = true; el.classList.add('dragging');
+      // The grabbed box lands on the grid; the rest of the selection moves by the same amount
+      const sdx = sn(bx0 + dx) - bx0, sdy = sn(by0 + dy) - by0;
+      for (const [bb, ox, oy] of orig){ bb.x = Math.round(ox + sdx); bb.y = Math.round(oy + sdy); place(els.get(bb.id), bb); }
+      renderLinks();
+    },
+    up(ev){
+      el.classList.remove('dragging');
+      if (moved){ commit(); return; }
+      if (shift){ if (wasSel) sel.boxes.delete(id); renderSel(); return; } // Shift+click toggles
+      setSel([id]);
+      if (hitText) startEdit(b, ev.clientX, ev.clientY); // on the text: edit
+      else renderSel();                                   // elsewhere in the box: select it
+    },
+    cancel(){ el.classList.remove('dragging'); }
+  };
+  startAutoPan(e);
+}
+// Double-click on empty canvas: a default-size box centred on the pointer, ready for typing
+function newBoxAt(p){
+  const w = snap ? 7*G : 160, h = snap ? 3*G : 70;
+  const b = { id: state.nextId++, x: sn(p.x - w/2), y: sn(p.y - h/2), w, h, text:'' };
+  state.boxes.push(b);
+  const el = makeEl(b); place(el, b); layer.appendChild(el); els.set(b.id, el);
+  commit(); startEdit(b);
+}
+viewport.addEventListener('dblclick', e => {
+  const bx = e.target.closest('.box'), h = e.target.closest('.h');
+  if (!bx){ if (!e.shiftKey && !e.target.closest('.hit') && !spaceDown){ e.preventDefault(); newBoxAt(pt(e)); } return; }
+  if (e.shiftKey) return;
+  if (h && onDot(e, +bx.dataset.id, h.dataset.a)) return; // double-click on the dot itself = line without arrow
+  e.preventDefault(); selectAllText(box(+bx.dataset.id));
+});
+
+function downHandle(e, id, k, exact = true, linkId = null){
+  e.preventDefault(); e.stopPropagation(); endEdit(); focusBoard();
+  const b = box(id), key = id + ':' + k, now = performance.now();
+  const quick = exact && lastHandle.key === key && now - lastHandle.t < 420;
+  const noArrow = armed === key || quick;
+  if (linkId == null) setSel([id]); renderSel();
+  const from = anchorPt(b, k); let dragged = false, target = null, ta = null;
+  const clearTarget = () => { if (target){ const t = els.get(target); if (t){ t.classList.remove('target'); t.querySelectorAll('.snap').forEach(x => x.classList.remove('snap')); } } };
+  gesture = { auto:true, active:false,
+    move(ev){
+      const p = pt(ev);
+      if (!dragged && Math.hypot(p.x - from.x, p.y - from.y)*view.z < 6) return;
+      dragged = true; this.active = true;
+      const under = document.elementFromPoint(ev.clientX, ev.clientY), tb = under && under.closest('.box');
+      const tid = tb ? +tb.dataset.id : null;
+      clearTarget(); target = null; ta = null;
+      let end = p;
+      if (tid && tid !== id){
+        const t = box(tid); target = tid; let best = Infinity;
+        for (const a in A){ const q = anchorPt(t, a), d = Math.hypot(q.x - p.x, q.y - p.y); if (d < best){ best = d; ta = a; } }
+        end = anchorPt(t, ta); tb.classList.add('target'); tb.querySelector(`.h[data-a="${ta}"]`).classList.add('snap');
+      }
+      const c = target ? linkGeom(b, k, box(target), ta, lineStyle === 'curved') : { pts: [from, { x: from.x + NRM[k][0]*STUB, y: from.y + NRM[k][1]*STUB }, end] };
+      if (!target) c.d = roundedPath(c.pts, lineStyle === 'curved' ? Infinity : 14);
+      tmp.setAttribute('d', c.d);
+      if (noArrow) tmp.removeAttribute('marker-end'); else tmp.setAttribute('marker-end', 'url(#ahs)');
+      renderLinks(c.pts);
+    },
+    up(){
+      tmp.setAttribute('d', ''); clearTarget();
+      if (dragged){
+        lastHandle = { key:'', t:0 };
+        if (target){
+          const l = { id: state.nextId++, from:id, fa:k, to:target, ta, arrow: !noArrow, curve: lineStyle === 'curved' };
+          state.links.push(l); armed = null; setSel([], [l.id]); commit();
+        }
+        renderSel();
+        return;
+      }
+      if (!exact){ // a plain click near a dot selects the box, or the line if it started on one
+        lastHandle = { key:'', t:0 };
+        if (linkId != null) setSel([], [linkId]);
+        renderSel(); return; } // a plain click near a dot just selects the box
+      if (quick){
+        armed = armed === key ? null : key; lastHandle = { key:'', t:0 }; renderSel();
+        toast(armed ? 'Next line from this dot will have no arrow' : 'Arrow turned back on');
+      } else lastHandle = { key, t: now };
+    },
+    cancel(){ tmp.setAttribute('d', ''); clearTarget(); renderLinks(); }
+  };
+  startAutoPan(e);
+}
+
+/* ---------- keyboard & buttons ---------- */
+window.addEventListener('keydown', e => {
+  const mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase();
+  // Undo/redo work everywhere, including while typing in a box
+  if (mod && k === 'z'){ e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+  if (mod && k === 'y'){ e.preventDefault(); redo(); return; }
+  if (gesture && e.key === 'Escape'){ e.preventDefault(); cancelGesture(); return; }
+  if (editing){ if (e.key === 'Escape'){ e.preventDefault(); endEdit(); } return; }
+  if (e.target.closest && e.target.closest('button') && (e.key === 'Enter' || e.key === ' ')) return;
+  if (mod && (k === '=' || k === '+')){ e.preventDefault(); zoomAt(view.z*1.2, viewport.clientWidth/2, viewport.clientHeight/2); }
+  else if (mod && k === '-'){ e.preventDefault(); zoomAt(view.z/1.2, viewport.clientWidth/2, viewport.clientHeight/2); }
+  else if (mod && k === '0'){ e.preventDefault(); zoomAt(1, viewport.clientWidth/2, viewport.clientHeight/2); }
+  else if (!mod && k === 't'){ e.preventDefault(); $('themeBtn').click(); }
+  else if (!mod && k === 'g'){ e.preventDefault(); $('snapBtn').click(); }
+  else if (e.key === ' '){ e.preventDefault(); if (!spaceDown){ spaceDown = true; viewport.classList.add('space'); } }
+  else if (mod && k === 'a'){ e.preventDefault(); setSel(state.boxes.map(b => b.id), state.links.map(l => l.id)); armed = null; renderSel(); }
+  else if ((e.key === 'Delete' || e.key === 'Backspace') && hasSel()){ e.preventDefault(); deleteSel(); }
+  else if (e.key === 'Enter' && onlyBox() != null){ e.preventDefault(); startEdit(box(onlyBox())); }
+  else if (e.altKey && e.key === 'ArrowLeft'){ e.preventDefault(); goPlace(-1); }
+  else if (e.altKey && e.key === 'ArrowRight'){ e.preventDefault(); goPlace(1); }
+  else if (e.key === 'Escape'){ setSel(); armed = null; renderSel(); }
+});
+window.addEventListener('keyup', e => { if (e.key === ' '){ spaceDown = false; viewport.classList.remove('space'); } });
+window.addEventListener('blur', () => { spaceDown = false; viewport.classList.remove('space'); });
+
+function deleteSel(){
+  const nb = sel.boxes.size, nl = sel.links.size;
+  state.boxes = state.boxes.filter(b => !sel.boxes.has(b.id));
+  state.links = state.links.filter(l => !sel.links.has(l.id) && !sel.boxes.has(l.from) && !sel.boxes.has(l.to));
+  setSel(); armed = null; renderAll(); commit();
+  if (nb + nl > 1) toast(`Deleted ${nb ? nb + (nb > 1 ? ' boxes' : ' box') : ''}${nb && nl ? ' and ' : ''}${nl ? nl + (nl > 1 ? ' lines' : ' line') : ''}. Undo brings them back.`);
+}
+// Buttons must not steal focus mid-edit, so undo/redo continue the typing session
+['undoBtn','redoBtn'].forEach(id => $(id).addEventListener('pointerdown', e => e.preventDefault()));
+$('undoBtn').onclick = undo;
+['placeBack','placeFwd'].forEach(id => $(id).addEventListener('pointerdown', e => e.preventDefault()));
+$('placeBack').onclick = () => goPlace(-1);
+['lsAngled','lsCurved'].forEach(id => $(id).addEventListener('pointerdown', e => e.preventDefault()));
+$('lsAngled').onclick = () => setLineStyle('angled');
+$('lsCurved').onclick = () => setLineStyle('curved');
+$('placeFwd').onclick = () => goPlace(1);
+updatePlaceButtons();
+$('snapBtn').onclick = () => { setSnap(!snap); toast(snap ? 'Snap to grid on' : 'Snap to grid off'); };
+setSnap(snap);
+$('capBtn').onclick = () => { setCap(!autoCap); toast(autoCap ? 'Auto-capitalise on' : 'Auto-capitalise off'); };
+setCap(autoCap);
+$('redoBtn').onclick = redo;
+$('zoomBtn').onclick = () => zoomAt(1, viewport.clientWidth/2, viewport.clientHeight/2);
+$('homeBtn').onclick = fitBoard;
+$('clearBtn').onclick = () => {
+  if (editing) endEdit();
+  if (!state.boxes.length) return;
+  state = { nextId: state.nextId, example:false, boxes:[], links:[] }; setSel(); armed = null;
+  renderAll(); commit(); toast('Board cleared. Undo brings it back.');
+};
+let tt; function toast(m){ toastEl.textContent = m; toastEl.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => toastEl.classList.remove('on'), 2200); }
+
+// Help box: open by default on large screens (remembered), a "?" button on small ones
+const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+document.querySelectorAll('#help .mod').forEach(k => k.textContent = isMac ? '⌘' : 'Ctrl');
+const small = () => matchMedia('(max-width: 760px)').matches;
+let helpPref = null; try { helpPref = localStorage.getItem('explainer.help'); } catch(e){}
+// Remembered at every screen size; on a first visit it starts open (except on phone-width screens)
+document.body.classList.toggle('help-open', helpPref ? helpPref === 'open' : !matchMedia('(max-width: 480px)').matches);
+function setHelp(open){ document.body.classList.toggle('help-open', open); try { localStorage.setItem('explainer.help', open ? 'open' : 'closed'); } catch(e){} settingChanged(); }
+$('helpMin').onclick = () => setHelp(false);
+// Unpinned (the default), the panel hides as soon as you click or start working anywhere else
+let helpPinned = false; try { helpPinned = localStorage.getItem('explainer.helpPin') === 'on'; } catch(e){}
+function setPin(on){ helpPinned = on; $('helpPin').setAttribute('aria-pressed', on); $('helpPin').title = on ? 'Unpin: hide when you click elsewhere' : 'Pin: keep open while you work';
+  try { localStorage.setItem('explainer.helpPin', on ? 'on' : 'off'); } catch(e){} settingChanged(); }
+$('helpPin').onclick = () => setPin(!helpPinned);
+setPin(helpPinned);
+document.addEventListener('pointerdown', e => {
+  if (!helpPinned && document.body.classList.contains('help-open') && !e.target.closest('#help, #helpBtn')) setHelp(false);
+}, true);
+$('helpBtn').onclick = () => setHelp(true);
+
+$('themeBtn').addEventListener('pointerdown', e => e.preventDefault());
+$('themeBtn').onclick = () => { const next = { auto:'light', light:'dark', dark:'auto' }[theme]; setTheme(next);
+  toast({ auto:'Theme follows your system', light:'Light theme', dark:'Dark theme' }[next]); };
+setTheme(theme);
+/* ---------- Share: the whole board, or only the selected items ---------- */
+// A selection share keeps the selected boxes, selected lines (with the boxes they join), and lines between selected boxes
+function selectionBoard(){
+  const ids = new Set(sel.boxes);
+  state.links.forEach(l => { if (sel.links.has(l.id)){ ids.add(l.from); ids.add(l.to); } });
+  const boxes = state.boxes.filter(b => ids.has(b.id));
+  const links = state.links.filter(l => ids.has(l.from) && ids.has(l.to) && (sel.links.has(l.id) || (sel.boxes.has(l.from) && sel.boxes.has(l.to))));
+  return { nextId: state.nextId, example: false, boxes: JSON.parse(JSON.stringify(boxes)), links: JSON.parse(JSON.stringify(links)) };
+}
+const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 'es'.slice(w.endsWith('x') ? 0 : 1));
+function openShareMenu(open){
+  const m = $('shareMenu'); m.hidden = !open; $('shareBtn').setAttribute('aria-expanded', open);
+  if (!open) return;
+  $('shareAllNote').textContent = `${plural(state.boxes.length, 'box')}, ${state.links.length} line${state.links.length === 1 ? '' : 's'}`;
+  const sb = selectionBoard(), any = sb.boxes.length > 0;
+  $('shareSel').disabled = !any;
+  $('shareSelNote').textContent = any ? `${plural(sb.boxes.length, 'box')}, ${sb.links.length} line${sb.links.length === 1 ? '' : 's'}` : 'Select boxes or lines first';
+}
+async function shareBoard(board, label){
+  openShareMenu(false);
+  const token = board === state ? (lastToken || await encodeBoard(state)) : await encodeBoard(board);
+  const base = shareLink(); const link = base ? base.split('#')[0] + '#' + token : null;
+  const ok = await copyText(link || '#' + token);
+  toast(!ok ? 'Couldn\'t copy the link. Try again.' : link ? `Link to ${label} copied` : `Code for ${label} copied. Add it to the end of this page's link.`);
+}
+$('shareBtn').addEventListener('pointerdown', e => e.preventDefault());
+$('shareMenu').addEventListener('pointerdown', e => e.preventDefault());
+$('shareBtn').onclick = () => { if (editing) endEdit(); openShareMenu($('shareMenu').hidden); };
+$('shareAll').onclick = () => shareBoard(state, 'the whole board');
+$('shareSel').onclick = () => { const sb = selectionBoard(); shareBoard(sb, sb.boxes.length === 1 ? 'the selected box' : plural(sb.boxes.length, 'selected box')); };
+document.addEventListener('pointerdown', e => { if (!$('shareMenu').hidden && !e.target.closest('.share-wrap')) openShareMenu(false); }, true);
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('shareMenu').hidden){ openShareMenu(false); } }, true);
+
+// Start: a board in the URL wins over the one saved in this browser
+(async () => {
+  const fromUrl = location.hash.length > 4 ? await decodeBoard(location.hash.slice(1)) : null;
+  const urlSettings = fromUrl && fromUrl.settings; if (fromUrl) delete fromUrl.settings;
+  state = fromUrl || load(); if (fromUrl) lastToken = location.hash.slice(1);
+  applySettings(urlSettings);
+  history = [JSON.stringify(state)]; hIdx = 0;
+  applyView(); renderAll(); updateButtons();
+  // A refresh reloads our own URL: only treat it as a newly opened board if it differs from what's saved here
+  let savedHere = null; try { savedHere = JSON.parse(localStorage.getItem(KEY)); } catch(e){}
+  const isNew = fromUrl && !(savedHere && Array.isArray(savedHere.boxes) && sameBoard(savedHere, fromUrl));
+  if (isNew){ places = []; pIdx = 0; savePlaces(); updatePlaceButtons(); requestAnimationFrame(fitBoard); }
+  if (fromUrl) save();
+  else encodeBoard(state).then(t => { if (!lastToken) lastToken = t; });
+  booted = true;
+  document.fonts && document.fonts.ready.then(() => {
+    state.boxes.forEach(fit); renderLinks();
+    if (hIdx === 0){ history[0] = JSON.stringify(state); save(); }
+  });
+})();
+})();
+</script>
+
+</body>
+</html>
