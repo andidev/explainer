@@ -138,7 +138,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: window `keydown` handler, `deleteSel`.
 
 ### D-015: Example board on first open; Clear board
-- Status: Active
+- Status: Amended by D-053
 - Date: 2026-10-13
 - Decision: A first-time visitor sees a small example board that explains the gestures, tagged
   "Example board". "Clear board" empties it and can be undone.
@@ -494,3 +494,16 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   (share format: arrow value 2 = both ends; older links still load, and older versions of the
   app read 2 as a normal arrow), `marker-start` with `orient="auto-start-reverse"`; shortcuts
   panel (`.both` key label); README.
+
+### D-053: The example board shows just the three essentials
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-015
+- Decision: The example board a first-time visitor sees is three boxes in a row joined by arrows:
+  "Drag or double-click to create a box, then type" → "Drag or double-click to create another
+  box" → "Connect boxes: select one, hold ⌘ and click the other" (Ctrl instead of ⌘ off Mac).
+  Every other tip lives in the shortcuts panel. If the window is too small to show the whole
+  example board, the first view zooms out to fit it.
+- Why: User asked that opening the board first explain only the most important commands. Asked
+  whether to replace the example board or add a welcome card, they chose replacing the board.
+- Code: `sample`, start-up block (fit when `state.example` does not fit).

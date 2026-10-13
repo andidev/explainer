@@ -234,19 +234,15 @@ let spaceDown = false, lastEv = null, raf = 0, viewAnim = 0;
 const els = new Map();
 
 function sample(){
-  return { nextId: 7, example: true, boxes: [
-    { id:1, x:60,  y:70,  w:210, h:80,  text:'Drag on empty space to draw a box' },
-    { id:2, x:380, y:60,  w:240, h:100, text:'Start typing. The text stays centred, and the box grows when it fills up' },
-    { id:3, x:380, y:260, w:240, h:100, text:'Move near a corner or edge middle to reveal a dot, then drag it onto another box' },
-    { id:4, x:720, y:270, w:220, h:80,  text:'Double-click a dot first to get a line without an arrow' },
-    { id:5, x:60,  y:270, w:220, h:110, text:'Click the text to edit it, or around it to select the box. Hold and drag to move' },
-    { id:6, x:720, y:60,  w:220, h:100, text:'The canvas never ends: scroll or Space+drag to pan, Ctrl+scroll to zoom' },
+  // The three things to know, as a tiny diagram (isMac is defined later, so test the platform here)
+  const mod = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl';
+  return { nextId: 4, example: true, boxes: [
+    { id:1, x:60,  y:80, w:220, h:88, text:'Drag or double-click to create a box, then type' },
+    { id:2, x:374, y:80, w:220, h:88, text:'Drag or double-click to create another box' },
+    { id:3, x:688, y:80, w:242, h:88, text:`Connect boxes: select one, hold ${mod} and click the other` },
   ], links: [
     { id:1, from:1, fa:'e', to:2, ta:'w', arrow:true },
-    { id:2, from:2, fa:'s', to:3, ta:'n', arrow:true },
-    { id:3, from:3, fa:'e', to:4, ta:'w', arrow:false },
-    { id:4, from:3, fa:'w', to:5, ta:'e', arrow:true },
-    { id:5, from:2, fa:'e', to:6, ta:'w', arrow:true },
+    { id:2, from:2, fa:'e', to:3, ta:'w', arrow:true },
   ]};
 }
 // Example boxes sit on the 22px grid
@@ -1282,6 +1278,9 @@ window.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('shareMen
   let savedHere = null; try { savedHere = JSON.parse(localStorage.getItem(KEY)); } catch(e){}
   const isNew = fromUrl && !(savedHere && Array.isArray(savedHere.boxes) && sameBoard(savedHere, fromUrl));
   if (isNew){ places = []; pIdx = 0; savePlaces(); updatePlaceButtons(); requestAnimationFrame(fitBoard); }
+  // The example board must be readable at a glance: zoom out if the window is too narrow for it
+  else if (state.example){ const r = bounds(state.boxes);
+    if (r && (view.x + (r.x + r.w)*view.z > viewport.clientWidth || view.y + (r.y + r.h)*view.z > viewport.clientHeight)) requestAnimationFrame(fitBoard); }
   if (fromUrl) save();
   else encodeBoard(state).then(t => { if (!lastToken) lastToken = t; });
   booted = true;
