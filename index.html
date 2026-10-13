@@ -137,6 +137,13 @@ body.help-open #helpBtn{display:inline-flex;align-items:center;justify-content:c
 .ib svg{width:17px;height:17px}
 .isl > button:not(.ib){border:0;background:transparent}
 .isep{width:1px;height:20px;background:var(--edge);margin:0 2px}
+/* Selection toolbar: floats just above the selection (below it if there is no room) */
+#selbar{position:fixed;z-index:6;transform:translateX(-50%);gap:2px}
+#selbar[hidden]{display:none}
+#selbar .sb-lines{display:contents}
+#selbar.no-lines .sb-lines{display:none}
+#selbar .ib[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+body.gesturing #selbar{display:none}
 #islBL .seg{border:0;background:transparent}
 .gh svg{width:19px;height:19px}
 /* Share: quiet — island surface, accent icon, soft accent on hover */
@@ -225,6 +232,20 @@ body.help-open #helpBtn{display:inline-flex;align-items:center;justify-content:c
     <span class="seg-label">Edits</span>
     <button id="placeFwd" type="button" title="Next edit place (Alt →)" aria-label="Next edit place">→</button>
   </span>
+</div>
+<div class="isl" id="selbar" role="toolbar" aria-label="Selection" hidden>
+  <span class="sb-lines">
+    <button id="sbAngled" class="ib" type="button" title="Angled" aria-label="Angled"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13h5a2 2 0 0 0 2-2V5a2 2 0 0 1 2-2h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    <button id="sbCurved" class="ib" type="button" title="Curved" aria-label="Curved"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13C7 13 9 3 14 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    <span class="isep"></span>
+    <button id="sbEnd" class="ib" type="button" title="Arrow at the end" aria-label="Arrow at the end"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9.5 4.5L13 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button id="sbNone" class="ib" type="button" title="Plain line" aria-label="Plain line"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    <button id="sbBoth" class="ib" type="button" title="Arrows at both ends" aria-label="Arrows at both ends"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M5.5 4.5L2 8l3.5 3.5M10.5 4.5L14 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button id="sbReverse" class="ib" type="button" title="Reverse direction" aria-label="Reverse direction"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 5.5h10M10 3l2.5 2.5L10 8M13.5 10.5h-10M6 8l-2.5 2.5L6 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <span class="isep"></span>
+  </span>
+  <button id="sbCopy" class="ib" type="button" title="Copy (Ctrl/⌘ C)" aria-label="Copy"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 3.5v-.5A1.5 1.5 0 0 0 9 1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+  <button id="sbDelete" class="ib" type="button" title="Delete (Backspace)" aria-label="Delete"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 9h5.6l.7-9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 </div>
 <div id="viewport" tabindex="-1" aria-label="Board">
   <div id="world">
@@ -551,6 +572,7 @@ function applyView(){
   viewport.style.backgroundPosition = `${view.x - g/2}px ${view.y - g/2}px`;
   $('zoomBtn').textContent = Math.round(view.z*100) + '%';
   saveView();
+  positionSelbar();
 }
 function panBy(dx, dy){ view.x += dx; view.y += dy; applyView(); }
 function zoomAt(nz, sx, sy){
@@ -666,7 +688,46 @@ function renderSel(){
   document.querySelectorAll('.h.armed').forEach(h => h.classList.remove('armed'));
   if (armed){ const [id, k] = armed.split(':'); const el = els.get(+id); el && el.querySelector(`.h[data-a="${k}"]`).classList.add('armed'); }
   renderLinks();
+  positionSelbar();
 }
+
+/* ---------- selection toolbar ---------- */
+const selLines = () => state ? state.links.filter(l => sel.links.has(l.id)) : [];
+// Screen rectangle around the selection (boxes and the paths of selected lines)
+function selScreenRect(){
+  const rects = [];
+  for (const id of sel.boxes){ const b = box(id); if (b) rects.push(b); }
+  for (const l of selLines()){ const a = box(l.from), b = box(l.to); if (!a || !b) continue;
+    for (const p of linkGeom(a, l.fa, b, l.ta, l.curve).pts) rects.push({ x:p.x, y:p.y, w:0, h:0 }); }
+  const r = bounds(rects); if (!r) return null;
+  const vr = viewport.getBoundingClientRect();
+  return { l: vr.left + view.x + r.x*view.z, t: vr.top + view.y + r.y*view.z, r: vr.left + view.x + (r.x + r.w)*view.z, b: vr.top + view.y + (r.y + r.h)*view.z };
+}
+function positionSelbar(){
+  const bar = $('selbar'); if (!bar) return;
+  const r = (hasSel() && editing == null) ? selScreenRect() : null;
+  bar.hidden = !r; if (!r) return;
+  const ls = selLines();
+  bar.classList.toggle('no-lines', !ls.length);
+  if (ls.length){
+    const all = f => ls.every(f);
+    $('sbAngled').setAttribute('aria-pressed', all(l => !l.curve)); $('sbCurved').setAttribute('aria-pressed', all(l => l.curve));
+    $('sbEnd').setAttribute('aria-pressed', all(l => l.arrow && !l.back)); $('sbNone').setAttribute('aria-pressed', all(l => !l.arrow && !l.back));
+    $('sbBoth').setAttribute('aria-pressed', all(l => l.arrow && l.back));
+    $('sbReverse').hidden = !ls.some(l => !!l.arrow !== !!l.back); // only one-way arrows can be reversed
+  }
+  const h = bar.offsetHeight || 40, w = bar.offsetWidth || 200, gap = 12, top = matchMedia('(max-width: 860px)').matches ? 112 : 64; // keep clear of the top islands
+  let y = r.t - h - gap; if (y < top) y = r.b + gap;                          // no room above: go below
+  y = Math.min(y, innerHeight - h - 64);
+  const x = Math.max(w/2 + 8, Math.min(innerWidth - w/2 - 8, (r.l + r.r)/2));
+  bar.style.left = x + 'px'; bar.style.top = y + 'px';
+}
+function setSelStyle(curve){ const ls = selLines(); if (!ls.length) return; ls.forEach(l => l.curve = curve); renderLinks(); commit(); positionSelbar(); }
+function setSelHeads(v){ const ls = selLines(); if (!ls.length) return; const h = headsFrom(v);
+  ls.forEach(l => { l.arrow = h.arrow; if (h.back) l.back = true; else delete l.back; }); renderLinks(); commit(); positionSelbar(); }
+// Reverse a one-way arrow: swap its ends (lines with no arrow or arrows at both ends look the same either way)
+function reverseSel(){ const ls = selLines().filter(l => !!l.arrow !== !!l.back); if (!ls.length) return;
+  ls.forEach(l => { [l.from, l.to] = [l.to, l.from]; [l.fa, l.ta] = [l.ta, l.fa]; }); renderLinks(); commit(); positionSelbar(); }
 
 // Snap to grid: a world value rounded to the nearest dot when the toggle is on
 const G = 22; let snap = false;
@@ -913,7 +974,7 @@ window.addEventListener('pointermove', e => {
   lastEv = e;
   // The button was released somewhere we never heard about (outside the frame, during a native drag, an alert…)
   if (gesture && e.pointerType === 'mouse' && e.buttons === 0){ endGesture(e); return; }
-  if (gesture) gesture.move(e); else nearDot(e);
+  if (gesture){ gesture.move(e); if (gesture && gesture.active) document.body.classList.add('gesturing'); } else nearDot(e);
 });
 // Boxes a Cmd/Ctrl+click on box `tid` would connect from: the box being edited, else the selection
 function linkSources(tid){ return (editing != null ? [editing] : [...sel.boxes]).filter(i => i !== tid && box(i)); }
@@ -998,6 +1059,7 @@ function cleanupGesture(){
   viewport.classList.remove('panning');
   if (capId != null){ try { viewport.releasePointerCapture(capId); } catch(e){} capId = null; }
   renderLinks();
+  document.body.classList.remove('gesturing'); positionSelbar();
 }
 window.addEventListener('pointerup', e => endGesture(e));
 window.addEventListener('pointercancel', () => cancelGesture());
@@ -1331,6 +1393,16 @@ function claimed(e){
 // Buttons must not steal focus mid-edit, so undo/redo continue the typing session
 ['undoBtn','redoBtn'].forEach(id => $(id).addEventListener('pointerdown', e => e.preventDefault()));
 $('undoBtn').onclick = undo;
+document.querySelectorAll('#selbar button').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); }));
+$('sbAngled').onclick = () => setSelStyle(false);
+$('sbCurved').onclick = () => setSelStyle(true);
+$('sbEnd').onclick = () => setSelHeads('end');
+$('sbNone').onclick = () => setSelHeads('none');
+$('sbBoth').onclick = () => setSelHeads('both');
+$('sbReverse').onclick = reverseSel;
+$('sbCopy').onclick = () => copySel(false);
+$('sbDelete').onclick = () => { if (hasSel()) deleteSel(); };
+window.addEventListener('resize', positionSelbar);
 ['placeBack','placeFwd'].forEach(id => $(id).addEventListener('pointerdown', e => e.preventDefault()));
 $('placeBack').onclick = () => goPlace(-1);
 ['lsAngled','lsCurved'].forEach(id => $(id).addEventListener('pointerdown', e => e.preventDefault()));
