@@ -59,7 +59,7 @@ Your settings, including light or dark mode, travel with the link.
 
 **Pins.** Drag the 📍 at the bottom onto the board to drop a pin, or click it to add one in the middle
 of the view. Each pin gets a name and a colour; click its name to jump back, or drag it to move it.
-Right-click a pin to rename or delete it. Pins travel with the link too.
+Right-click a pin (long-press on touch) to rename or delete it. Pins travel with the link too.
 
 ## Shortcuts
 
@@ -76,10 +76,10 @@ Right-click a pin to rename or delete it. Pins travel with the link too.
 | Delete the box you're typing in, when it's empty | Backspace or Delete |
 | Plain line / arrows both ways | Hold Shift / Shift+Ctrl while dropping a line |
 | Change a selected line (style, arrowheads, reverse) | Use the toolbar above it |
-| Add a pin | Drag 📍 onto the board |
+| Add a pin | Drag or click 📍 |
 | Jump to a pin | Click it |
 | Move a pin | Drag its chip onto the board |
-| Rename or delete a pin | Right-click it |
+| Rename or delete a pin | Right-click it, or long-press on touch |
 | Arrow from the selected box to another box | ⌘+click the other box (Ctrl+click on Windows) |
 | …a line without arrowheads instead | ⌘+Shift+click (Ctrl+Shift+click on Windows) |
 | …arrowheads at both ends instead | ⌘+Shift+Ctrl+click (Ctrl+Shift+Alt+click on Windows) |

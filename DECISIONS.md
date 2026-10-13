@@ -654,13 +654,15 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
     Space or middle-button drag on a marker still pans.
   - **Chips.** Click jumps to the pin. Drag onto the board moves the pin; releasing over a
     control cancels. On touch, sideways movement scrolls the bar instead.
-  - **Right-click menu.** On a chip or a marker: Rename and Delete pin. It closes on Esc, a click
+  - **Right-click menu.** On a chip or a marker (on touch or pen: a 500ms long-press that has not
+    moved, which opens the menu without also jumping or moving): Rename and Delete pin. It closes on Esc, a click
     outside, the wheel or a resize.
   - **Undo.** Add, rename, move and delete are each one undo step, and undo or redo reveals the
     pin that changed. Clear board removes the pins (undoable). The example board has no pins.
   - **Links.** Pins travel in share links as an optional 6th packed element
     `[[id,x,y,name,c],…]`, written only when there are pins. Pins with a non-integer id are
-    dropped. Older versions ignore the element; links without it load with no pins.
+    dropped, as are repeated ids (first wins); coordinates are read as numbers and the next id
+    is kept above every pin id. Older versions ignore the element; links without it load with no pins.
   - **Copy and share.** Copy/paste and Share → Selected items leave pins out.
 - Why: User asked for pins they can drop on the board, name, colour automatically, jump to, move
   and delete. Amending D-057: adds a bottom-centre island.
