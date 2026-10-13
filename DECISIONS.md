@@ -436,3 +436,13 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   requests are squash-merged and their branches deleted after merging.
 - Why: User asked for a public GitHub repository with an MIT license and the usual configuration.
 - Code: `LICENSE`, `.github/ISSUE_TEMPLATE/`, `README.md` (Try it, License).
+
+### D-049: Backspace in an empty box deletes the box
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-014
+- Decision: While editing a box whose text is empty (or only whitespace), pressing Backspace or
+  Delete stops editing and deletes the box with its lines (undoable). A held key that has just
+  erased the last character does not delete the box; a fresh press is needed.
+- Why: User asked that Backspace in an empty box delete it.
+- Code: window `keydown` handler (editing branch), `deleteSel`; shortcuts panel; README table.

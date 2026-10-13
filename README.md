@@ -62,6 +62,7 @@ Your settings, including light or dark mode, travel with the link.
 | Select the box | Click around the text |
 | Add to selection | Shift+click, or drag across items |
 | Delete selected | Backspace or Delete |
+| Delete the box you're typing in, when it's empty | Backspace or Delete |
 | Select everything | Ctrl/⌘ A |
 | Undo / redo | Ctrl/⌘ Z / Shift+Ctrl/⌘ Z |
 | Jump between your recent edits | Alt+← / Alt+→ |

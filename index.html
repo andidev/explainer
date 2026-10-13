@@ -197,6 +197,7 @@ body.help-open #helpBtn{display:none}
     <dt><kbd class="mod">Ctrl</kbd>+scroll</dt><dd>Zoom</dd>
     <dt><kbd class="mod">Ctrl</kbd> <kbd>A</kbd></dt><dd>Select all</dd>
     <dt><kbd>⌫</kbd> · <kbd>Del</kbd></dt><dd>Delete selected</dd>
+    <dt><kbd>⌫</kbd> in an empty box</dt><dd>Delete the box</dd>
     <dt><kbd class="mod">Ctrl</kbd> <kbd>Z</kbd></dt><dd>Undo</dd>
     <dt><kbd>⇧</kbd> <kbd class="mod">Ctrl</kbd> <kbd>Z</kbd></dt><dd>Redo</dd>
     <dt>Hover a line, drag</dt><dd>New line from its end</dd>
@@ -1102,7 +1103,14 @@ window.addEventListener('keydown', e => {
   if (mod && k === 'z'){ e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
   if (mod && k === 'y'){ e.preventDefault(); redo(); return; }
   if (gesture && e.key === 'Escape'){ e.preventDefault(); cancelGesture(); return; }
-  if (editing){ if (e.key === 'Escape'){ e.preventDefault(); endEdit(); } return; }
+  if (editing){
+    if (e.key === 'Escape'){ e.preventDefault(); endEdit(); }
+    // Backspace/Delete in an empty box deletes the box; a held key that just emptied it does not
+    else if ((e.key === 'Backspace' || e.key === 'Delete') && !mod && !e.repeat && !readText(els.get(editing).firstChild).trim()){
+      e.preventDefault(); const id = editing; endEdit(); setSel([id]); deleteSel();
+    }
+    return;
+  }
   if (e.target.closest && e.target.closest('button') && (e.key === 'Enter' || e.key === ' ')) return;
   if (mod && (k === '=' || k === '+')){ e.preventDefault(); zoomAt(view.z*1.2, viewport.clientWidth/2, viewport.clientHeight/2); }
   else if (mod && k === '-'){ e.preventDefault(); zoomAt(view.z/1.2, viewport.clientWidth/2, viewport.clientHeight/2); }
