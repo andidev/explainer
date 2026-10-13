@@ -69,6 +69,7 @@ Your settings, including light or dark mode, travel with the link.
 | …a line without arrowheads instead | ⌘+Shift+click (Ctrl+Shift+click on Windows) |
 | …arrowheads at both ends instead | ⌘+Shift+Ctrl+click (Ctrl+Shift+Alt+click on Windows) |
 | Select everything | Ctrl/⌘ A |
+| Copy / cut / paste the selection | Ctrl/⌘ C / X / V |
 | Undo / redo | Ctrl/⌘ Z / Shift+Ctrl/⌘ Z |
 | Jump between your recent edits | Alt+← / Alt+→ |
 | Pan / zoom | Scroll or Space+drag / Ctrl+scroll |

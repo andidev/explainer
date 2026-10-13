@@ -202,6 +202,7 @@ body.help-open #helpBtn{display:none}
     <dt><kbd class="mod">Ctrl</kbd> <kbd>⇧</kbd>+click a box</dt><dd>Line from the selected box</dd>
     <dt><kbd class="mod">Ctrl</kbd> <kbd>⇧</kbd> <kbd class="both">Alt</kbd>+click a box</dt><dd>Both ways from the selected box</dd>
     <dt><kbd class="mod">Ctrl</kbd> <kbd>A</kbd></dt><dd>Select all</dd>
+    <dt><kbd class="mod">Ctrl</kbd> <kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd></dt><dd>Copy / cut / paste selected</dd>
     <dt><kbd>⌫</kbd> · <kbd>Del</kbd></dt><dd>Delete selected</dd>
     <dt><kbd>⌫</kbd> in an empty box</dt><dd>Delete the box</dd>
     <dt><kbd class="mod">Ctrl</kbd> <kbd>Z</kbd></dt><dd>Undo</dd>
@@ -1161,6 +1162,7 @@ window.addEventListener('keydown', e => {
   else if (!mod && k === 't'){ e.preventDefault(); $('themeBtn').click(); }
   else if (!mod && k === 'g'){ e.preventDefault(); $('snapBtn').click(); }
   else if (e.key === ' '){ e.preventDefault(); if (!spaceDown){ spaceDown = true; viewport.classList.add('space'); } }
+  else if (mod && !e.shiftKey && !e.altKey && (k === 'c' || k === 'x' || k === 'v')) keyCopy(k);
   else if (mod && k === 'a'){ e.preventDefault(); setSel(state.boxes.map(b => b.id), state.links.map(l => l.id)); armed = null; renderSel(); }
   else if ((e.key === 'Delete' || e.key === 'Backspace') && hasSel()){ e.preventDefault(); deleteSel(); }
   else if (e.key === 'Enter' && onlyBox() != null){ e.preventDefault(); startEdit(box(onlyBox())); }
@@ -1182,6 +1184,60 @@ function deleteSel(){
   state.links = state.links.filter(l => !sel.links.has(l.id) && !sel.boxes.has(l.from) && !sel.boxes.has(l.to));
   setSel(); armed = null; renderAll(); commit();
   if (nb + nl > 1) toast(`Deleted ${nb ? nb + (nb > 1 ? ' boxes' : ' box') : ''}${nb && nl ? ' and ' : ''}${nl ? nl + (nl > 1 ? ' lines' : ' line') : ''}. Undo brings them back.`);
+}
+/* ---------- copy, cut, paste ---------- */
+// The copied part of the board travels in the system clipboard (so it pastes into another tab or board),
+// with the box texts as plain text for other apps. A copy kept here covers browsers that skip the
+// copy/paste events when no text is selected.
+const CLIP_TYPE = 'application/x-explainer+json';
+let clip = null, pasteN = 0, clipEvent = false;
+const clipText = c => c.boxes.map(b => b.text).filter(Boolean).join('\n');
+function copySel(cut){
+  if (!hasSel()) return false;
+  const c = selectionBoard(); if (!c.boxes.length) return false;
+  clip = { boxes: c.boxes, links: c.links }; pasteN = 0;
+  if (cut) deleteSel();
+  toast(`${cut ? 'Cut' : 'Copied'} ${plural(c.boxes.length, 'box')}`);
+  return true;
+}
+function pasteClip(c){
+  if (!c || !c.boxes || !c.boxes.length) return;
+  if (editing) endEdit();
+  pasteN++;
+  // Each paste lands one grid step further down-right; if that is off screen, centre it in the view
+  const r = bounds(c.boxes), vz = view.z, vw = viewport.clientWidth/vz, vh = viewport.clientHeight/vz, vx = -view.x/vz, vy = -view.y/vz;
+  let dx = G*pasteN, dy = G*pasteN;
+  if (r.x + dx > vx + vw - 40 || r.y + dy > vy + vh - 40 || r.x + r.w + dx < vx + 40 || r.y + r.h + dy < vy + 40){
+    dx = sn(vx + (vw - r.w)/2) - r.x; dy = sn(vy + (vh - r.h)/2) - r.y; }
+  const ids = new Map();
+  for (const b of c.boxes){ const nb = { id: state.nextId++, x: Math.round(b.x + dx), y: Math.round(b.y + dy), w: b.w, h: b.h, text: String(b.text || '') };
+    ids.set(b.id, nb.id); state.boxes.push(nb); }
+  const nl = [];
+  for (const l of c.links){ if (!ids.has(l.from) || !ids.has(l.to) || !A[l.fa] || !A[l.ta]) continue;
+    const x = { id: state.nextId++, from: ids.get(l.from), fa: l.fa, to: ids.get(l.to), ta: l.ta, arrow: !!l.arrow, curve: !!l.curve };
+    if (l.back) x.back = true; state.links.push(x); nl.push(x.id); }
+  setSel([...ids.values()], nl); armed = null; renderAll(); commit();
+}
+function readClip(e){
+  const dt = e.clipboardData; if (!dt) return null;
+  try { const c = JSON.parse(dt.getData(CLIP_TYPE) || 'null'); if (c && Array.isArray(c.boxes) && Array.isArray(c.links)) return c; } catch(err){}
+  return null;
+}
+const onBoard = e => !editing && !(e.target.closest && e.target.closest('input, textarea, [contenteditable="true"], [contenteditable="plaintext-only"]'));
+document.addEventListener('copy', e => { clipEvent = true; if (!onBoard(e) || !hasSel()) return;
+  if (copySel(false)){ e.preventDefault(); e.clipboardData.setData('text/plain', clipText(clip)); e.clipboardData.setData(CLIP_TYPE, JSON.stringify(clip)); } });
+document.addEventListener('cut', e => { clipEvent = true; if (!onBoard(e) || !hasSel()) return;
+  if (copySel(true)){ e.preventDefault(); e.clipboardData.setData('text/plain', clipText(clip)); e.clipboardData.setData(CLIP_TYPE, JSON.stringify(clip)); } });
+document.addEventListener('paste', e => { clipEvent = true; if (!onBoard(e)) return;
+  const c = readClip(e);
+  if (c){ e.preventDefault(); if (!clip || JSON.stringify(c) !== JSON.stringify(clip)){ clip = c; pasteN = 0; } pasteClip(clip); }
+  else if (clip && (e.clipboardData && e.clipboardData.getData('text/plain')) === clipText(clip)){ e.preventDefault(); pasteClip(clip); }
+});
+// Fallbacks for browsers that send no copy/paste event when nothing is text-selected
+// (the event, when it comes, arrives before this timeout runs)
+function keyCopy(k){
+  clipEvent = false;
+  setTimeout(() => { if (clipEvent || editing) return; k === 'v' ? pasteClip(clip) : copySel(k === 'x'); }, 0);
 }
 // Buttons must not steal focus mid-edit, so undo/redo continue the typing session
 ['undoBtn','redoBtn'].forEach(id => $(id).addEventListener('pointerdown', e => e.preventDefault()));

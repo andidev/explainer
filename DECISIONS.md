@@ -507,3 +507,18 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Why: User asked that opening the board first explain only the most important commands. Asked
   whether to replace the example board or add a welcome card, they chose replacing the board.
 - Code: `sample`, start-up block (fit when `state.example` does not fit).
+
+### D-054: Copy, cut and paste the selection
+- Status: Active
+- Date: 2026-10-13
+- Decision: Outside text editing, Ctrl/Cmd+C copies the selected boxes with the lines between
+  them (a selected line brings its two boxes, as in "Share selection"), Ctrl/Cmd+X cuts them, and
+  Ctrl/Cmd+V pastes a copy with new IDs. The pasted items become the selection and the paste is
+  one undo step. Each repeated paste lands one grid step further down and right; if that would be
+  off screen, the paste is centred in the view. The copy goes to the system clipboard, so it
+  pastes into another tab or board in the same browser, with the box texts as plain text for
+  other apps. Plain text pasted from elsewhere does not create boxes. While editing a box, these
+  keys copy and paste text as usual.
+- Why: User asked that selected items can be copied and pasted.
+- Code: `copySel`, `pasteClip`, `readClip`, `keyCopy`, document `copy`/`cut`/`paste` listeners,
+  clipboard type `application/x-explainer+json`; shortcuts panel; README.
