@@ -75,7 +75,7 @@ line, or editing text, and appears again after.
 Each change applies to every selected line and is one undo step. "Reverse direction" swaps
 `from`/`to` and `fa`/`ta`, so a one-way arrow points the other way; it is only shown when a
 selected line has an arrow at one end only. The top-centre island no longer changes selected
-lines: it sets new lines only. This changes D-033's "Style of selected + new lines".
+lines: it sets new lines only. This amends D-036, where the switch changed the selected lines.
 
 ## 5. Welcome on an empty board
 
