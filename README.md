@@ -50,7 +50,10 @@ Your settings, including light or dark mode, travel with the link.
 
 | Action | Keys |
 |---|---|
-| New box | Drag or double-click empty space |
+| New box | Drag on empty space |
+| New box, same size as your last one | Double-click empty space |
+| New box, default size | Shift+double-click |
+| New box, size of the last selected box | ⌘+Shift+double-click (Ctrl+Shift on Windows) |
 | Edit text / select all text | Click the text / double-click the box |
 | Select the box | Click around the text |
 | Add to selection | Shift+click, or drag across items |

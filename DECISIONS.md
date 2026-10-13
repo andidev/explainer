@@ -201,7 +201,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: keydown handler.
 
 ### D-022: Shortcuts panel in the bottom-right corner
-- Status: Amended by D-037, D-038
+- Status: Amended by D-037, D-038, D-047
 - Date: 2026-10-13
 - Decision: A small, translucent, minimisable panel lists the shortcuts. Minimised it becomes a
   "?" button. Modifier keys show as ⌘ on Mac and Ctrl elsewhere.
@@ -273,7 +273,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `pack`, `unpack`, `encodeBoard`, `decodeBoard`, `scheduleUrl`.
 
 ### D-030: Double-click empty canvas creates a default box
-- Status: Active
+- Status: Amended by D-046
 - Date: 2026-10-13
 - Decision: Creates a box of 7×3 grid cells (154×66 px) centred on the pointer, snapped, in
   editing mode. Not triggered by double-clicking a line or with Shift held.
@@ -403,4 +403,26 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   "Boxes, lines, and nothing in the way."
 - Why: User asked for a polished GitHub README and a logo.
 - Code: `README.md`, `docs/logo-*.png`, `docs/screenshot-*.png`.
+
+### D-046: Double-click box size: last created, default, or last selected
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-030
+- Decision: Double-clicking empty space creates a box the size of the last box you created (drawn
+  or double-clicked; its size at creation, remembered across refreshes). Shift+double-click uses
+  the default size (7×3 grid cells). Cmd+Shift (Mac) or Ctrl+Shift (Windows/Linux) +double-click
+  uses the current size of the last box you selected by clicking or drag-selecting; if there is
+  none, it falls back to the last created size and says so. With no box created yet, the default
+  size is used.
+- Why: User asked for quick repeat sizes when building diagrams.
+- Code: `sizeFor`, `rememberCreated`, `lastCreatedSize`, `lastSelectedId`, `newBoxAt`.
+
+### D-047: Shortcuts panel scrolls instead of growing off screen
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-022
+- Decision: The panel's height is capped to the window; its list scrolls and its header (with the
+  pin and minimise buttons) stays visible.
+- Why: On short windows the panel's top, including minimise, was pushed off screen.
+- Code: `#help` max-height, sticky `.help-head`.
 

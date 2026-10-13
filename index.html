@@ -112,8 +112,9 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #shareMenu button:hover:not(:disabled){background:var(--accent-soft);color:var(--ink)}
 #shareMenu button span{font-size:12px;color:var(--muted)}
 #help{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:6;width:262px;max-width:calc(100% - 32px);
+  max-height:calc(100% - 96px - env(safe-area-inset-bottom,0px));overflow-y:auto;overscroll-behavior:contain;
   background:var(--chrome);backdrop-filter:blur(8px);border:1px solid var(--edge);border-radius:10px;padding:10px 12px 12px;font-size:12px;color:var(--muted)}
-.help-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.help-head{position:sticky;top:-10px;background:var(--chrome);padding-top:2px;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
 .help-head button{border:0;background:none;padding:0 4px;font-size:16px;line-height:1;color:var(--muted)}
 .help-actions{display:flex;align-items:center;gap:2px}
 #helpPin{display:inline-flex;align-items:center;padding:3px;border-radius:4px}
@@ -180,7 +181,10 @@ body.help-open #helpBtn{display:none}
 <aside id="help" aria-label="Shortcuts">
   <div class="help-head"><span>Shortcuts</span><span class="help-actions"><button id="helpPin" type="button" aria-pressed="false" aria-label="Pin shortcuts" title="Pin: keep open while you work"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 1.5l4 4-1.6.6-2.6 2.6.4 3.3-1.1 1.1-3-3-3.6 3.6-.7-.7 3.6-3.6-3-3 1.1-1.1 3.3.4 2.6-2.6z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></button><button id="helpMin" type="button" aria-label="Minimise help" title="Minimise">–</button></span></div>
   <dl>
-    <dt>Drag or double-click empty space</dt><dd>New box</dd>
+    <dt>Drag on empty space</dt><dd>New box</dd>
+    <dt>Double-click empty space</dt><dd>New box, size of your last</dd>
+    <dt><kbd>⇧</kbd>+double-click</dt><dd>New box, default size</dd>
+    <dt><kbd>⇧</kbd> <kbd class="mod">Ctrl</kbd>+double-click</dt><dd>New box, size of last selected</dd>
     <dt>Drag across items</dt><dd>Select them</dd>
     <dt>Click the text</dt><dd>Edit text</dd>
     <dt>Click around the text</dt><dd>Select box</dd>
@@ -946,6 +950,7 @@ function downCanvas(e){
       draft.style.left = r.x+'px'; draft.style.top = r.y+'px'; draft.style.width = r.w+'px'; draft.style.height = r.h+'px';
       // Touching any box or line turns the drag into a selection instead of a new box
       hit = inRect(r);
+      if (hit.boxes.length) lastSelectedId = hit.boxes[hit.boxes.length - 1];
       const any = hit.boxes.length + hit.links.length > 0;
       draft.classList.toggle('marquee', any);
       setSel([...base.boxes, ...hit.boxes], [...base.links, ...hit.links]); renderSel();
@@ -955,6 +960,7 @@ function downCanvas(e){
       if (hit && hit.boxes.length + hit.links.length) return; // selection made
       if (!r || r.w*view.z < 14 || r.h*view.z < 14) return;
       const b = { id: state.nextId++, x:sn(r.x), y:sn(r.y), w:Math.max(snap ? 3*G : 60, sn(r.w)), h:Math.max(snap ? 2*G : 44, sn(r.h)), text:'' };
+      rememberCreated(b);
       state.boxes.push(b);
       const el = makeEl(b); place(el, b); layer.appendChild(el); els.set(b.id, el);
       commit(); startEdit(b);
@@ -973,6 +979,7 @@ function downBox(e, id){
   armed = null;
   if (layer.lastChild !== el) layer.appendChild(el); // bring to front (re-inserting would break double-click)
   const shift = e.shiftKey, wasSel = sel.boxes.has(id);
+  lastSelectedId = id;
   const hitText = !shift && onText(el.firstChild, e.clientX, e.clientY);
   if (shift){ if (!wasSel) sel.boxes.add(id); }
   else if (!wasSel) setSel([id]);
@@ -1004,16 +1011,32 @@ function downBox(e, id){
   startAutoPan(e);
 }
 // Double-click on empty canvas: a default-size box centred on the pointer, ready for typing
-function newBoxAt(p){
-  const w = snap ? 7*G : 160, h = snap ? 3*G : 70;
+// Double-click sizes: plain = the last box you created, Shift = default, Cmd/Ctrl+Shift = the last box you selected
+const defaultSize = () => ({ w: snap ? 7*G : 160, h: snap ? 3*G : 70 });
+let lastCreatedSize = null, lastSelectedId = null;
+try { const v = JSON.parse(localStorage.getItem('explainer.lastSize')); if (v && v.w > 0 && v.h > 0) lastCreatedSize = v; } catch(e){}
+function rememberCreated(b){ lastCreatedSize = { w: b.w, h: b.h }; try { localStorage.setItem('explainer.lastSize', JSON.stringify(lastCreatedSize)); } catch(e){} }
+function sizeFor(e){
+  if (e.shiftKey && (e.metaKey || e.ctrlKey)){
+    const b = lastSelectedId != null && box(lastSelectedId);
+    if (b) return { w: b.w, h: b.h, why: 'last selected box' };
+    toast('No box selected yet, so this one has the size of your last box');
+  } else if (e.shiftKey) return { ...defaultSize(), why: 'default' };
+  return lastCreatedSize ? { ...lastCreatedSize } : defaultSize();
+}
+function newBoxAt(p, size){
+  const { w, h } = size || defaultSize();
   const b = { id: state.nextId++, x: sn(p.x - w/2), y: sn(p.y - h/2), w, h, text:'' };
+  rememberCreated(b);
   state.boxes.push(b);
   const el = makeEl(b); place(el, b); layer.appendChild(el); els.set(b.id, el);
   commit(); startEdit(b);
 }
 viewport.addEventListener('dblclick', e => {
-  const bx = e.target.closest('.box'), h = e.target.closest('.h');
-  if (!bx){ if (!e.shiftKey && !e.target.closest('.hit') && !spaceDown){ e.preventDefault(); newBoxAt(pt(e)); } return; }
+  // Pointer capture retargets click events to the board, so look up what is really under the pointer
+  const under = document.elementFromPoint(e.clientX, e.clientY) || e.target;
+  const bx = under.closest('.box'), h = under.closest('.h');
+  if (!bx){ if (!under.closest('.hit') && !under.closest('header, #help, #helpBtn') && !spaceDown){ e.preventDefault(); newBoxAt(pt(e), sizeFor(e)); } return; }
   if (e.shiftKey) return;
   if (h && onDot(e, +bx.dataset.id, h.dataset.a)) return; // double-click on the dot itself = line without arrow
   e.preventDefault(); selectAllText(box(+bx.dataset.id));
@@ -1024,7 +1047,7 @@ function downHandle(e, id, k, exact = true, linkId = null){
   const b = box(id), key = id + ':' + k, now = performance.now();
   const quick = exact && lastHandle.key === key && now - lastHandle.t < 420;
   const noArrow = armed === key || quick;
-  if (linkId == null) setSel([id]); renderSel();
+  if (linkId == null){ setSel([id]); lastSelectedId = id; } renderSel();
   const from = anchorPt(b, k); let dragged = false, target = null, ta = null;
   const clearTarget = () => { if (target){ const t = els.get(target); if (t){ t.classList.remove('target'); t.querySelectorAll('.snap').forEach(x => x.classList.remove('snap')); } } };
   gesture = { auto:true, active:false,
