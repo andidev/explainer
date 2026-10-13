@@ -127,7 +127,8 @@ body.help-open #helpBtn{display:inline-flex;align-items:center;justify-content:c
 .isl{position:fixed;z-index:5;display:flex;align-items:center;gap:4px;padding:4px;background:var(--chrome);backdrop-filter:blur(8px);
   border:1px solid var(--edge);border-radius:10px;box-shadow:0 6px 18px -12px rgba(20,30,60,.45)}
 #islTL{top:calc(12px + env(safe-area-inset-top,0px));left:12px;padding-right:10px;gap:8px;z-index:7}
-#islTC{top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%)}
+#islTC{top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);gap:6px}
+#segHeads button{padding:5px 8px}
 #islTR{top:calc(12px + env(safe-area-inset-top,0px));right:12px}
 #islBL{bottom:calc(12px + env(safe-area-inset-bottom,0px));left:12px}
 .isl .mark{font-size:17px;gap:7px} .isl .mark svg{width:19px;height:19px}
@@ -162,6 +163,7 @@ body.help-open #helpBtn{display:inline-flex;align-items:center;justify-content:c
   .phone-only{display:flex!important} hr.phone-only{display:block!important}
   .no-phone{display:none!important}
   #islTL .example{display:none}
+  #islTC .lbl-txt{display:none}
 }
 @media (prefers-reduced-motion:reduce){.h,#toast{transition:none}.box.flash{animation:none}}
 </style>
@@ -190,8 +192,13 @@ body.help-open #helpBtn{display:inline-flex;align-items:center;justify-content:c
 </div>
 <div class="isl" id="islTC" role="group" aria-label="Style for new lines" title="Style for new lines">
   <span class="seg" id="segStyle">
-    <button id="lsAngled" type="button" aria-pressed="true" title="Angled lines that follow the grid"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13h5a2 2 0 0 0 2-2V5a2 2 0 0 1 2-2h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Angled</button>
-    <button id="lsCurved" type="button" aria-pressed="false" title="Curved lines"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13C7 13 9 3 14 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Curved</button>
+    <button id="lsAngled" type="button" aria-pressed="true" title="Angled lines that follow the grid"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13h5a2 2 0 0 0 2-2V5a2 2 0 0 1 2-2h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span class="lbl-txt">Angled</span></button>
+    <button id="lsCurved" type="button" aria-pressed="false" title="Curved lines"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13C7 13 9 3 14 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span class="lbl-txt">Curved</span></button>
+  </span>
+  <span class="seg" id="segHeads" role="group" aria-label="Arrowheads for new lines">
+    <button id="hdEnd" type="button" aria-pressed="true" title="Arrow at the end"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9.5 4.5L13 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button id="hdNone" type="button" aria-pressed="false" title="Plain line, no arrow (or hold Shift while drawing)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    <button id="hdBoth" type="button" aria-pressed="false" title="Arrows at both ends (or hold Shift+Ctrl while drawing)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M5.5 4.5L2 8l3.5 3.5M10.5 4.5L14 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   </span>
 </div>
 <div class="isl" id="islTR">
@@ -313,7 +320,7 @@ function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch
 const boardOnly = s => [s.nextId, s.boxes.map(b => [b.id, b.x, b.y, b.w, b.h, b.text]), s.links.map(l => [l.id, l.from, l.fa, l.to, l.ta, l.back ? 2 : l.arrow ? 1 : 0, l.curve ? 1 : 0])];
 const sameBoard = (a, b) => JSON.stringify(boardOnly(a)) === JSON.stringify(boardOnly(b));
 // Every setting travels with the board: theme, snap, capitals, line style, shortcuts panel
-const currentSettings = () => ({ t: theme, s: snap ? 1 : 0, c: { off:0, sentence:1, upper:2 }[capMode], l: lineStyle === 'curved' ? 1 : 0,
+const currentSettings = () => ({ t: theme, s: snap ? 1 : 0, c: { off:0, sentence:1, upper:2 }[capMode], l: lineStyle === 'curved' ? 1 : 0, a: { none:0, end:1, both:2 }[newHeads],
   h: document.body.classList.contains('help-open') ? 1 : 0, p: helpPinned ? 1 : 0 });
 const pack = s => JSON.stringify([1, ...boardOnly(s), currentSettings()]);
 function unpack(str){
@@ -515,18 +522,24 @@ function linkGeom(a, ak, b, bk, curved){
 }
 let lineStyle = 'angled';
 try { if (localStorage.getItem('explainer.linestyle') === 'curved') lineStyle = 'curved'; } catch(e){}
+// Arrowheads for new lines: 'end' (default), 'none' or 'both'. Shift / Shift+Ctrl still override while drawing.
+let newHeads = 'end';
+try { const v = localStorage.getItem('explainer.newheads'); if (v === 'none' || v === 'both') newHeads = v; } catch(e){}
+const headsFrom = v => v === 'both' ? { arrow:true, back:true } : v === 'none' ? { arrow:false } : { arrow:true };
+function setNewHeads(v){
+  newHeads = v; try { localStorage.setItem('explainer.newheads', v); } catch(e){}
+  updateStyleButtons(); settingChanged();
+}
 function setLineStyle(style){
   lineStyle = style; try { localStorage.setItem('explainer.linestyle', style); } catch(e){} settingChanged();
-  const ids = [...sel.links];
-  if (ids.length){ state.links.forEach(l => { if (sel.links.has(l.id)) l.curve = style === 'curved'; }); renderLinks(); commit(); }
   updateStyleButtons();
-  toast(ids.length ? `${ids.length > 1 ? ids.length + ' lines' : 'Line'} set to ${style}. New lines will be ${style} too.` : `New lines will be ${style}`);
 }
+// The top-centre island shows the style for new lines (selected lines are changed from the selection toolbar)
 function updateStyleButtons(){
-  const ls = state ? state.links.filter(l => sel.links.has(l.id)) : [];
-  const cur = ls.length ? (ls.every(l => l.curve) ? 'curved' : ls.every(l => !l.curve) ? 'angled' : null) : lineStyle;
   const a = $('lsAngled'), c = $('lsCurved'); if (!a) return;
-  a.setAttribute('aria-pressed', cur === 'angled'); c.setAttribute('aria-pressed', cur === 'curved');
+  a.setAttribute('aria-pressed', lineStyle === 'angled'); c.setAttribute('aria-pressed', lineStyle === 'curved');
+  const hb = { end:$('hdEnd'), none:$('hdNone'), both:$('hdBoth') };
+  for (const k in hb) if (hb[k]) hb[k].setAttribute('aria-pressed', newHeads === k);
 }
 function pt(e){ const r = viewport.getBoundingClientRect(); return { x: (e.clientX - r.left - view.x)/view.z, y: (e.clientY - r.top - view.y)/view.z }; }
 
@@ -713,6 +726,7 @@ function applySettings(st){
   if (st.s != null) setSnap(!!st.s);
   if (st.c != null) setCap(st.c === 2 ? 'upper' : st.c ? 'sentence' : 'off');
   if (st.l != null){ lineStyle = st.l ? 'curved' : 'angled'; try { localStorage.setItem('explainer.linestyle', lineStyle); } catch(e){} if (typeof updateStyleButtons === 'function') updateStyleButtons(); }
+  if (st.a != null) setNewHeads(st.a === 2 ? 'both' : st.a === 0 ? 'none' : 'end');
   if (st.p != null && typeof setPin === 'function') setPin(!!st.p);
   if (st.h != null && typeof setHelp === 'function') setHelp(!!st.h);
 }
@@ -912,7 +926,7 @@ function facing(a, b){
 // Arrowheads for a new line from the keys held: Shift = plain line, Shift+Ctrl = arrows at both ends.
 // Cmd/Ctrl+click already uses Ctrl on Windows, so there the both-ends key is Alt (Cmd+Shift+Ctrl on Mac).
 function heads(e, click, noArrow){
-  if (!e.shiftKey) return noArrow ? { arrow:false } : { arrow:true };
+  if (!e.shiftKey) return noArrow ? { arrow:false } : headsFrom(newHeads);
   return (click && !isMac ? e.altKey : e.ctrlKey) ? { arrow:true, back:true } : { arrow:false };
 }
 const linkProps = h => h.back ? { arrow:true, back:true } : { arrow:h.arrow };
@@ -1320,8 +1334,12 @@ $('undoBtn').onclick = undo;
 ['placeBack','placeFwd'].forEach(id => $(id).addEventListener('pointerdown', e => e.preventDefault()));
 $('placeBack').onclick = () => goPlace(-1);
 ['lsAngled','lsCurved'].forEach(id => $(id).addEventListener('pointerdown', e => e.preventDefault()));
-$('lsAngled').onclick = () => setLineStyle('angled');
-$('lsCurved').onclick = () => setLineStyle('curved');
+$('lsAngled').onclick = () => { setLineStyle('angled'); toast('New lines will be angled'); };
+$('lsCurved').onclick = () => { setLineStyle('curved'); toast('New lines will be curved'); };
+['hdEnd','hdNone','hdBoth'].forEach(id => $(id).addEventListener('pointerdown', e => e.preventDefault()));
+$('hdEnd').onclick = () => { setNewHeads('end'); toast('New lines get an arrow'); };
+$('hdNone').onclick = () => { setNewHeads('none'); toast('New lines have no arrow'); };
+$('hdBoth').onclick = () => { setNewHeads('both'); toast('New lines get arrows at both ends'); };
 $('placeFwd').onclick = () => goPlace(1);
 updatePlaceButtons();
 $('snapBtn').onclick = () => { setSnap(!snap); toast(snap ? 'Snap to grid on' : 'Snap to grid off'); };
