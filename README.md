@@ -7,7 +7,7 @@
 
 <p align="center">
   A tiny whiteboard for explaining things. Draw a box, type, connect it to the next one.<br>
-  No sign-up, no install, no menus to learn. One HTML file.
+  No sign-up, no install, nothing to learn. One HTML file.
 </p>
 
 <p align="center">
@@ -49,7 +49,7 @@ Hold Shift as you drop it for a plain line without an arrow, or Shift+Ctrl for a
 **Arrange.** Drag a box from anywhere to move it, and its lines follow. Drag across several items to
 select them, or Shift+click to add to the selection. Boxes snap to the grid unless you turn it off.
 
-**Change a line.** Click a line and a toolbar appears above it: angled or curved, arrow at the end,
+**Change a line.** Click a line and a toolbar appears next to it: angled or curved, arrow at the end,
 plain or both ends, reverse direction, copy and delete. The ☰ menu holds the theme, capitals and
 snap to grid.
 

@@ -42,7 +42,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   checked were explain.how, explainthis.how, explainthis.page, explainer.how, boxsplain.com,
   whyboard.app, explainerboard.com.
 - Why: User's chosen name.
-- Code: `<title>`, header `.mark`.
+- Code: `<title>`, the logo in the welcome (`.wl-logo`).
 
 ### D-002: One self-contained HTML file, no build step
 - Status: Active
@@ -362,7 +362,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `theme`, `setTheme`, `[data-theme]` CSS blocks.
 
 ### D-041: Every setting is saved with the board
-- Status: Active
+- Status: Amended by D-062
 - Amends: D-029
 - Date: 2026-10-13
 - Decision: Theme, snap, auto-capitalise, line style, and shortcuts panel open/pinned are stored in
@@ -533,7 +533,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `.gh` link in `header`, header right padding.
 
 ### D-056: Capitals: All caps (default), Sentence case, As typed
-- Status: Active
+- Status: Amended by D-059
 - Date: 2026-10-13
 - Amends: D-034
 - Decision: The former Auto-capitalise switch is a button that cycles through three modes, showing
@@ -556,7 +556,8 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Date: 2026-10-13
 - Amends: D-055, D-037
 - Decision: There is no header; the board fills the window and small islands float over it.
-  Top-left: the ☰ menu button, the mark, the wordmark and the "Example board" tag. Top-centre:
+  Top-left: the ☰ menu button only; the "Example board" tag is a separate small pill just to the
+  right of it, shown only while the example board is on screen. Top-centre:
   the style for new lines (Angled/Curved and arrowheads). Top-right: the GitHub link and Share.
   Bottom-left: zoom −, the zoom percentage, zoom +, Fit board, Undo, Redo and the Edits control.
   Bottom-right: the **?** button for shortcuts. The GitHub link of D-055 now sits in the top-right
@@ -566,7 +567,8 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   on windows wider than 640px (was 480px). At 860px or less the panel's height is capped so it
   stays below the top islands.
 - Why: User chose the floating layout inspired by Excalidraw, so the board gets the whole window.
-- Code: `#islTL`, `#islTC`, `#islTR`, `#islBL`, `.isl` and the media queries at 860px and 640px,
+  The user later asked for the top-left island to hold the menu button only (no mark or wordmark).
+- Code: `#islTL`, `#exampleTag`, `#islTC`, `#islTR`, `#islBL`, `.isl` and the media queries at 860px and 640px,
   `setHelp`, `helpPref`.
 
 ### D-058: Quiet Share button
@@ -580,7 +582,9 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 ### D-059: The ☰ menu
 - Status: Active
 - Date: 2026-10-13
-- Decision: The ☰ button opens a menu with: Theme, Capitals and Snap to grid (these rows stay
+- Amends: D-056
+- Decision: The ☰ button opens a menu with: Theme, Capitals (moved here from the header, amending
+  D-056) and Snap to grid (these rows stay
   open when clicked so you can cycle them); Open the example board; Clear board; on phone-width
   windows only, Fit board, Previous edit place and Next edit place; Shortcuts; Source on GitHub.
   It closes on Esc or a click outside it.
@@ -619,7 +623,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 ### D-062: Arrowheads for new lines
 - Status: Active
 - Date: 2026-10-13
-- Amends: D-052
+- Amends: D-052, D-041
 - Decision: The top-centre island sets the arrowheads of new lines: arrow at the end (default),
   plain, or arrows at both ends. The setting is remembered and travels in share links as key `a`
   (0 none, 1 end, 2 both); a link without `a` leaves the setting unchanged. It does not change
