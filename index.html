@@ -63,6 +63,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   background-image:radial-gradient(var(--dot) 1.1px, transparent 1.3px)}
 #viewport.space{cursor:grab}
 #viewport:focus{outline:none}
+/* A press here starts a line (a connection dot is showing): say so with the crosshair */
+#viewport.linking,#viewport.linking *{cursor:crosshair!important}
 #viewport.panning,#viewport.panning *{cursor:grabbing!important}
 #world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0}
 #links{position:absolute;pointer-events:none;overflow:visible;z-index:1}
@@ -85,7 +87,6 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .box.flash{animation:flash .7s ease-out}
 @keyframes flash{0%{box-shadow:0 0 0 10px var(--accent-soft)}100%{box-shadow:0 0 0 3px var(--accent-soft)}}
 .txt{width:100%;min-height:1.35em;text-align:center;font-size:16px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;outline:none;cursor:inherit;caret-color:var(--accent)}
-.box.editing{cursor:default}
 .box.editing .txt{cursor:text;user-select:text;-webkit-user-select:text}
 .h{position:absolute;width:11px;height:11px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--box);border:2px solid var(--accent);
   opacity:0;transition:opacity .12s, transform .12s;z-index:2;cursor:crosshair}
@@ -866,6 +867,7 @@ function nearDot(e){
   }
   if (!found) nearLink = null;
   if (found !== nearEl){ nearEl && nearEl.classList.remove('near'); found && found.classList.add('near'); nearEl = found; }
+  viewport.classList.toggle('linking', !!found && !e.shiftKey);
 }
 function endGesture(e){ if (!gesture) return; const g = gesture; gesture = null; try { g.up(e); } finally { cleanupGesture(); } }
 function cancelGesture(){ if (!gesture) return; const g = gesture; gesture = null; try { g.cancel && g.cancel(); } finally { cleanupGesture(); } }

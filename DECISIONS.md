@@ -446,3 +446,16 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   erased the last character does not delete the box; a fresh press is needed.
 - Why: User asked that Backspace in an empty box delete it.
 - Code: window `keydown` handler (editing branch), `deleteSel`; shortcuts panel; README table.
+
+### D-050: The cursor shows what a press will do
+- Status: Active
+- Date: 2026-10-13
+- Decision: Over a box, the cursor is a hand (grab) wherever a press drags the box, including
+  the space around the text of a box being edited. Over the text of a box being edited it is the
+  text cursor. Whenever a connection dot is showing, so that a press starts a line (near a box's
+  edge or a dot, or hovering a line near its end), the cursor is a crosshair everywhere it would
+  be, overriding the hand and the text cursor. Shift (which selects instead) and panning keep
+  their own cursors.
+- Why: User reported no hand on the draggable part of a box being edited, and a hand where a
+  press would create a line.
+- Code: `nearDot` toggles `#viewport.linking`; CSS `.box`, `.box.editing .txt`, `#viewport.linking`.
