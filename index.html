@@ -31,23 +31,9 @@ body{margin:0;font-size:14px}
   --edge:#2b3240; color-scheme:dark;
 }
 html,body{height:100%}
-body{background:var(--paper);color:var(--ink);font-family:var(--f-text);display:flex;flex-direction:column;overflow:hidden}
-header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 56px 10px 16px;background:var(--chrome);border-bottom:1px solid var(--edge);backdrop-filter:blur(8px);position:relative;z-index:5}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-text);overflow:hidden}
 .mark{font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
 .mark svg{width:22px;height:22px}
-/* GitHub link: pinned to the header's top-right corner; the header's right padding keeps the tools clear of it */
-.gh{position:absolute;top:10px;right:16px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:var(--muted)}
-.gh:hover{color:var(--ink);background:var(--accent-soft)}
-.gh:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.gh svg{width:20px;height:20px}
-.hint{color:var(--muted);font-size:13px;flex:1;min-width:0}
-.hint kbd{font-family:var(--f-text);font-size:11.5px;border:1px solid var(--edge);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--box);color:var(--ink)}
-.tools{display:flex;gap:6px;flex-wrap:wrap}
-#snapBtn{display:inline-flex;align-items:center;gap:8px}
-#capBtn{display:inline-flex;align-items:center;gap:6px;min-width:128px}
-#capBtn .cap-ico{font-weight:700;font-size:11.5px;letter-spacing:.02em;color:var(--muted);min-width:18px}
-#themeBtn{display:inline-flex;align-items:center;gap:6px;min-width:76px}
-#themeBtn svg{width:14px;height:14px}
 .track{width:26px;height:15px;border-radius:999px;background:var(--edge);position:relative;transition:background .15s}
 .track::after{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:var(--box);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
 [aria-checked="true"] > .track{background:var(--accent)}
@@ -66,7 +52,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #zoomBtn{font-variant-numeric:tabular-nums;min-width:58px}
 .example{font-size:12px;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:3px 10px}
 
-#viewport{flex:1;position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;
+#viewport{position:fixed;inset:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;
   background-image:radial-gradient(var(--dot) 1.1px, transparent 1.3px)}
 #viewport.space{cursor:grab}
 #viewport:focus{outline:none}
@@ -107,10 +93,9 @@ body.caps .txt{text-transform:uppercase;letter-spacing:.02em}
 .draft{position:absolute;border:1.5px dashed var(--accent);background:var(--accent-soft);border-radius:7px;pointer-events:none;z-index:3}
 .draft.marquee{border:1px solid var(--accent);background:transparent;border-radius:2px;box-shadow:inset 0 0 0 9999px var(--accent-soft);opacity:.85}
 
-#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,8px);background:var(--ink);color:var(--paper);
+#toast{position:fixed;left:50%;bottom:calc(64px + env(safe-area-inset-bottom,0px));transform:translate(-50%,8px);background:var(--ink);color:var(--paper);
   font-size:13px;padding:8px 14px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s, transform .15s;z-index:9;max-width:calc(100% - 32px);text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0)}
-.hint{flex:1}
 .share-wrap{position:relative;display:inline-flex}
 #shareBtn{display:inline-flex;align-items:center;gap:6px}
 #shareBtn svg{width:14px;height:14px}
@@ -120,8 +105,8 @@ body.caps .txt{text-transform:uppercase;letter-spacing:.02em}
 #shareMenu button{border:0;text-align:left;display:flex;flex-direction:column;gap:1px;padding:7px 10px;border-radius:6px}
 #shareMenu button:hover:not(:disabled){background:var(--accent-soft);color:var(--ink)}
 #shareMenu button span{font-size:12px;color:var(--muted)}
-#help{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:6;width:262px;max-width:calc(100% - 32px);
-  max-height:calc(100% - 96px - env(safe-area-inset-bottom,0px));overflow-y:auto;overscroll-behavior:contain;
+#help{position:fixed;right:12px;bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:6;width:262px;max-width:calc(100% - 32px);
+  max-height:calc(100% - 140px - env(safe-area-inset-bottom,0px));overflow-y:auto;overscroll-behavior:contain;
   background:var(--chrome);backdrop-filter:blur(8px);border:1px solid var(--edge);border-radius:10px;padding:10px 12px 12px;font-size:12px;color:var(--muted)}
 .help-head{position:sticky;top:-10px;background:var(--chrome);padding-top:2px;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
 .help-head button{border:0;background:none;padding:0 4px;font-size:16px;line-height:1;color:var(--muted)}
@@ -133,47 +118,104 @@ body.caps .txt{text-transform:uppercase;letter-spacing:.02em}
 #help dl{display:grid;grid-template-columns:1fr auto;gap:4px 10px;margin:0}
 #help dt{margin:0;min-width:0} #help dd{margin:0;color:var(--ink);text-align:right}
 #help kbd,#help .mod{font-family:var(--f-text);font-size:11px;border:1px solid var(--edge);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--box);color:var(--ink)}
-#helpBtn{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:6;width:34px;height:34px;padding:0;border-radius:50%;
-  font-weight:700;color:var(--muted);background:var(--chrome);backdrop-filter:blur(8px)}
+#helpBtn{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:6;width:40px;height:40px;padding:0;
+  font-weight:700;color:var(--muted);background:var(--chrome);backdrop-filter:blur(8px);border-radius:10px;box-shadow:0 6px 18px -12px rgba(20,30,60,.45)}
 body:not(.help-open) #help{display:none}
 body.help-open #helpBtn{display:none}
+body.help-open #helpBtn{display:inline-flex;align-items:center;justify-content:center}
+/* Floating islands: the board fills the window and the controls float at its edges */
+.isl{position:fixed;z-index:5;display:flex;align-items:center;gap:4px;padding:4px;background:var(--chrome);backdrop-filter:blur(8px);
+  border:1px solid var(--edge);border-radius:10px;box-shadow:0 6px 18px -12px rgba(20,30,60,.45)}
+#islTL{top:calc(12px + env(safe-area-inset-top,0px));left:12px;padding-right:10px;gap:8px;z-index:7}
+#islTC{top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%)}
+#islTR{top:calc(12px + env(safe-area-inset-top,0px));right:12px}
+#islBL{bottom:calc(12px + env(safe-area-inset-bottom,0px));left:12px}
+.isl .mark{font-size:17px;gap:7px} .isl .mark svg{width:19px;height:19px}
+.ib{width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--muted);border-radius:7px}
+.ib:hover:not(:disabled){background:var(--accent-soft);color:var(--ink)}
+.ib svg{width:17px;height:17px}
+.isl > button:not(.ib){border:0;background:transparent}
+.isep{width:1px;height:20px;background:var(--edge);margin:0 2px}
+#islBL .seg{border:0;background:transparent}
+.gh svg{width:19px;height:19px}
+/* Share: quiet — island surface, accent icon, soft accent on hover */
+#shareBtn{display:inline-flex;align-items:center;gap:6px;background:var(--box);border:1px solid var(--edge);color:var(--ink);font-weight:700;padding:5px 12px}
+#shareBtn svg{width:14px;height:14px;color:var(--accent)}
+#shareBtn:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+#shareMenu{left:auto;right:0}
+/* ☰ menu */
+#menu{position:absolute;top:calc(100% + 8px);left:0;z-index:8;min-width:244px;padding:4px;background:var(--box);border:1px solid var(--edge);border-radius:10px;
+  box-shadow:0 10px 28px -12px rgba(20,30,60,.45);display:flex;flex-direction:column;gap:1px}
+#menu[hidden]{display:none}
+#menu hr{border:0;border-top:1px solid var(--edge);margin:4px 2px;width:auto}
+.mrow{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border:0;background:transparent;padding:7px 10px;border-radius:6px;
+  font:inherit;font-size:13px;color:var(--ink);text-decoration:none;text-align:left;cursor:pointer}
+.mrow:hover{background:var(--accent-soft);color:var(--ink)}
+.mr-v{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px}
+.mr-v svg{width:14px;height:14px}
+.phone-only{display:none!important}
+@media (max-width:640px){
+  .phone-only{display:flex!important} hr.phone-only{display:block!important}
+  .no-phone{display:none!important}
+  #islTC{top:calc(62px + env(safe-area-inset-top,0px))}
+  #islTL .example{display:none}
+}
 @media (prefers-reduced-motion:reduce){.h,#toast{transition:none}.box.flash{animation:none}}
 </style>
 </head>
 <body>
 
-<header>
+<div class="isl" id="islTL">
+  <button id="menuBtn" class="ib" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Menu" title="Menu"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M2.5 8h11M2.5 12h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
   <div class="mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2" y="3" width="8" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="14" width="8" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><path d="M10 6.5h4.5a2 2 0 0 1 2 2V11" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/><path d="M14 10.5l2.5 2.5 2.5-2.5" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Explainer</div>
   <span class="example" id="exampleTag" hidden>Example board</span>
-  <div class="hint"></div>
-  <div class="tools">
-    <button id="themeBtn" type="button" title="Theme">Auto</button>
-    <button id="capBtn" type="button" title="Capitals">All caps</button>
-    <button id="snapBtn" type="button" role="switch" aria-checked="false" title="Snap boxes to the grid (G)"><span class="track" aria-hidden="true"></span>Snap to grid</button>
-    <span class="share-wrap">
-      <button id="shareBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Share a link to this board or to the selected items"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2M5 5l3-3 3 3M3 9v4h10V9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Share</button>
-      <div id="shareMenu" role="menu" hidden>
-        <button id="shareAll" type="button" role="menuitem"><b>Whole board</b><span id="shareAllNote"></span></button>
-        <button id="shareSel" type="button" role="menuitem"><b>Selected items</b><span id="shareSelNote"></span></button>
-      </div>
-    </span>
-    <span class="seg" role="group" aria-label="Line style" title="Style for selected lines and new lines">
-      <button id="lsAngled" type="button" aria-pressed="true" title="Angled lines that follow the grid"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13h5a2 2 0 0 0 2-2V5a2 2 0 0 1 2-2h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Angled</button>
-      <button id="lsCurved" type="button" aria-pressed="false" title="Curved lines"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13C7 13 9 3 14 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Curved</button>
-    </span>
-    <span class="seg" role="group" aria-label="Edit places">
-      <button id="placeBack" type="button" title="Previous edit place (Alt ←)" aria-label="Previous edit place">←</button>
-      <span class="seg-label">Edits</span>
-      <button id="placeFwd" type="button" title="Next edit place (Alt →)" aria-label="Next edit place">→</button>
-    </span>
-    <button id="undoBtn" type="button" title="Undo (Ctrl/⌘ Z)">Undo</button>
-    <button id="redoBtn" type="button" title="Redo (Ctrl/⌘ Shift Z)">Redo</button>
-    <button id="zoomBtn" type="button" title="Reset zoom to 100%">100%</button>
-    <button id="homeBtn" type="button" title="Show the whole board">Fit board</button>
-    <button id="clearBtn" type="button">Clear board</button>
+  <div id="menu" role="menu" hidden>
+    <button id="themeBtn" class="mrow" type="button" role="menuitem"></button>
+    <button id="capBtn" class="mrow" type="button" role="menuitem"></button>
+    <button id="snapBtn" class="mrow" type="button" role="menuitemcheckbox" aria-checked="false"><span class="mr-l">Snap to grid</span><span class="track" aria-hidden="true"></span></button>
+    <hr>
+    <button id="exampleBtn" class="mrow" type="button" role="menuitem"><span class="mr-l">Open the example board</span></button>
+    <button id="clearBtn" class="mrow" type="button" role="menuitem"><span class="mr-l">Clear board</span></button>
+    <hr class="phone-only">
+    <button id="mFit" class="mrow phone-only" type="button" role="menuitem"><span class="mr-l">Fit board</span></button>
+    <button id="mBack" class="mrow phone-only" type="button" role="menuitem"><span class="mr-l">Previous edit place</span><span class="mr-v">Alt ←</span></button>
+    <button id="mFwd" class="mrow phone-only" type="button" role="menuitem"><span class="mr-l">Next edit place</span><span class="mr-v">Alt →</span></button>
+    <hr>
+    <button id="mHelp" class="mrow" type="button" role="menuitem"><span class="mr-l">Shortcuts</span></button>
+    <a id="mGit" class="mrow" role="menuitem" href="https://github.com/andidev/explainer" target="_blank" rel="noopener"><span class="mr-l">Source on GitHub</span></a>
   </div>
-  <a class="gh" href="https://github.com/andidev/explainer" target="_blank" rel="noopener" title="Explainer on GitHub" aria-label="Explainer on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
-</header>
+</div>
+<div class="isl" id="islTC" role="group" aria-label="Style for new lines" title="Style for new lines">
+  <span class="seg" id="segStyle">
+    <button id="lsAngled" type="button" aria-pressed="true" title="Angled lines that follow the grid"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13h5a2 2 0 0 0 2-2V5a2 2 0 0 1 2-2h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Angled</button>
+    <button id="lsCurved" type="button" aria-pressed="false" title="Curved lines"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13C7 13 9 3 14 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Curved</button>
+  </span>
+</div>
+<div class="isl" id="islTR">
+  <a class="gh ib" href="https://github.com/andidev/explainer" target="_blank" rel="noopener" title="Explainer on GitHub" aria-label="Explainer on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
+  <span class="share-wrap">
+    <button id="shareBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Share a link to this board or to the selected items"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2M5 5l3-3 3 3M3 9v4h10V9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Share</button>
+    <div id="shareMenu" role="menu" hidden>
+      <button id="shareAll" type="button" role="menuitem"><b>Whole board</b><span id="shareAllNote"></span></button>
+      <button id="shareSel" type="button" role="menuitem"><b>Selected items</b><span id="shareSelNote"></span></button>
+    </div>
+  </span>
+</div>
+<div class="isl" id="islBL">
+  <button id="zoomOut" class="ib" type="button" aria-label="Zoom out" title="Zoom out (Ctrl/⌘ −)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+  <button id="zoomBtn" type="button" title="Reset zoom to 100%">100%</button>
+  <button id="zoomIn" class="ib" type="button" aria-label="Zoom in" title="Zoom in (Ctrl/⌘ +)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9M8 3.5v9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+  <button id="homeBtn" class="no-phone" type="button" title="Show the whole board">Fit board</button>
+  <span class="isep"></span>
+  <button id="undoBtn" class="ib" type="button" aria-label="Undo" title="Undo (Ctrl/⌘ Z)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.5L2.5 6.5l3 3M2.8 6.5H10a3.5 3.5 0 0 1 0 7H7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button id="redoBtn" class="ib" type="button" aria-label="Redo" title="Redo (Ctrl/⌘ Shift Z)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 3.5l3 3-3 3M13.2 6.5H6a3.5 3.5 0 0 0 0 7h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <span class="isep no-phone"></span>
+  <span class="seg no-phone" role="group" aria-label="Edit places">
+    <button id="placeBack" type="button" title="Previous edit place (Alt ←)" aria-label="Previous edit place">←</button>
+    <span class="seg-label">Edits</span>
+    <button id="placeFwd" type="button" title="Next edit place (Alt →)" aria-label="Next edit place">→</button>
+  </span>
+</div>
 <div id="viewport" tabindex="-1" aria-label="Board">
   <div id="world">
     <svg id="links" xmlns="http://www.w3.org/2000/svg">
@@ -239,7 +281,7 @@ const CE = (() => { const d = document.createElement('div'); try { d.contentEdit
 
 let state, sel = { boxes:new Set(), links:new Set() }, editing = null, armed = null, lastHandle = { key:'', t:0 }, gesture = null;
 let history = [], hIdx = -1, typeTimer = 0;
-let view = { x: 40, y: 30, z: 1 };
+let view = { x: 40, y: 80, z: 1 };
 let spaceDown = false, lastEv = null, raf = 0, viewAnim = 0;
 const els = new Map();
 
@@ -526,8 +568,8 @@ function reveal(r){
   animateView({ z, x: viewport.clientWidth/2 - (r.x + r.w/2)*z, y: viewport.clientHeight/2 - (r.y + r.h/2)*z });
 }
 function fitBoard(){
-  const r = bounds(state.boxes); if (!r) { animateView({ x:40, y:30, z:1 }); return; }
-  const z = Math.max(0.2, Math.min(1.25, viewport.clientWidth/(r.w + 120), viewport.clientHeight/(r.h + 120)));
+  const r = bounds(state.boxes); if (!r) { animateView({ x:40, y:80, z:1 }); return; }
+  const z = Math.max(0.2, Math.min(1.25, viewport.clientWidth/(r.w + 120), viewport.clientHeight/(r.h + 200)));
   animateView({ z, x: viewport.clientWidth/2 - (r.x + r.w/2)*z, y: viewport.clientHeight/2 - (r.y + r.h/2)*z });
 }
 
@@ -618,7 +660,7 @@ const sn = v => snap ? Math.round(v/G)*G : Math.round(v);
 /* ---------- capitals: All caps (default), Sentence case, As typed ---------- */
 // All caps is display only (CSS), so the typed text is kept and switching back restores it.
 // Sentence capitalising while typing stays on in All caps, so the text reads well if you switch.
-const CAPS = { upper:'All caps', sentence:'Sentence case', off:'As typed' }, CAP_ICO = { upper:'AA', sentence:'Aa', off:'aa' };
+const CAPS = { upper:'All caps', sentence:'Sentence case', off:'As typed' };
 let capMode = 'upper';
 try { const m = localStorage.getItem('explainer.capmode');
   capMode = CAPS[m] ? m : localStorage.getItem('explainer.autocap') === 'off' ? 'off' : 'upper'; } catch(e){}
@@ -627,7 +669,7 @@ const capAttr = () => ({ upper:'characters', sentence:'sentences', off:'off' })[
 function setCap(m){
   const was = capMode; capMode = m;
   document.body.classList.toggle('caps', m === 'upper');
-  const b = $('capBtn'); b.innerHTML = `<span class="cap-ico" aria-hidden="true">${CAP_ICO[m]}</span><span>${CAPS[m]}</span>`;
+  const b = $('capBtn'); b.innerHTML = `<span class="mr-l">Capitals</span><span class="mr-v">${CAPS[m]}</span>`;
   b.title = 'Capitals: ' + CAPS[m].toLowerCase() + ' (click to change)';
   els.forEach(el => el.firstChild.setAttribute('autocapitalize', capAttr()));
   try { localStorage.setItem('explainer.capmode', m); } catch(e){}
@@ -657,7 +699,7 @@ function setTheme(t){
   const root = document.documentElement;
   if (t === 'auto'){ if (hostTheme) root.setAttribute('data-theme', hostTheme); else root.removeAttribute('data-theme'); }
   else root.setAttribute('data-theme', t);
-  const b = $('themeBtn'); if (b){ b.innerHTML = THEME_ICON[t] + '<span>' + { auto:'Auto', light:'Light', dark:'Dark' }[t] + '</span>';
+  const b = $('themeBtn'); if (b){ b.innerHTML = '<span class="mr-l">Theme</span><span class="mr-v">' + THEME_ICON[t] + { auto:'Auto', light:'Light', dark:'Dark' }[t] + '</span>';
     b.title = 'Theme: ' + { auto:'follows your system', light:'light', dark:'dark' }[t] + ' (click to change)'; }
   try { localStorage.setItem('explainer.theme', t); } catch(e){}
   settingChanged();
@@ -829,7 +871,7 @@ function endEdit(){
 viewport.addEventListener('pointerdown', e => {
   if (gesture) cancelGesture(); // a stale gesture from a missed release never survives a new press
   if (!editing){ const s = getSelection(); if (s && s.rangeCount && !s.isCollapsed) s.removeAllRanges(); }
-  if (e.target.closest('header')) return;
+  if (e.target.closest('.isl, #menu, #help, #helpBtn')) return;
   if (e.button === 1 || e.button === 2 || (spaceDown && e.button === 0)) return startPan(e);
   if (e.button !== 0) return;
   const h = e.target.closest('.h'), bx = e.target.closest('.box'), hit = e.target.closest('.hit');
@@ -1098,7 +1140,7 @@ viewport.addEventListener('dblclick', e => {
   // Pointer capture retargets click events to the board, so look up what is really under the pointer
   const under = document.elementFromPoint(e.clientX, e.clientY) || e.target;
   const bx = under.closest('.box'), h = under.closest('.h');
-  if (!bx){ if (!under.closest('.hit') && !under.closest('header, #help, #helpBtn') && !spaceDown){ e.preventDefault(); newBoxAt(pt(e), sizeFor(e)); } return; }
+  if (!bx){ if (!under.closest('.hit') && !under.closest('.isl, #menu, #help, #helpBtn') && !spaceDown){ e.preventDefault(); newBoxAt(pt(e), sizeFor(e)); } return; }
   if (e.shiftKey || e.metaKey || e.ctrlKey) return; // Cmd/Ctrl+click connects; a quick second click must not start editing
   if (h && onDot(e, +bx.dataset.id, h.dataset.a)) return; // double-click on the dot itself = line without arrow
   e.preventDefault(); selectAllText(box(+bx.dataset.id));
@@ -1282,12 +1324,38 @@ updatePlaceButtons();
 $('snapBtn').onclick = () => { setSnap(!snap); toast(snap ? 'Snap to grid on' : 'Snap to grid off'); };
 setSnap(snap);
 $('capBtn').addEventListener('pointerdown', e => e.preventDefault());
+$('snapBtn').addEventListener('pointerdown', e => e.preventDefault());
 $('capBtn').onclick = () => { const next = { upper:'sentence', sentence:'off', off:'upper' }[capMode]; setCap(next);
   toast({ upper:'All caps', sentence:'Sentence case: capitals start each sentence', off:'Text as typed' }[next]); };
 setCap(capMode);
 $('redoBtn').onclick = redo;
 $('zoomBtn').onclick = () => zoomAt(1, viewport.clientWidth/2, viewport.clientHeight/2);
 $('homeBtn').onclick = fitBoard;
+// ☰ menu: settings rows stay open so you can cycle them; actions close it
+function openMenu(open){
+  $('menu').hidden = !open; $('menuBtn').setAttribute('aria-expanded', open);
+  if (open) openShareMenu(false);
+}
+$('menuBtn').addEventListener('pointerdown', e => e.preventDefault());
+$('menuBtn').onclick = () => openMenu($('menu').hidden);
+$('menu').addEventListener('pointerdown', e => { if (!e.target.closest('a')) e.preventDefault(); }); // keep focus (and any edit) where it is
+document.addEventListener('pointerdown', e => { if (!$('menu').hidden && !e.target.closest('#menu, #menuBtn')) openMenu(false); }, true);
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('menu').hidden){ e.stopPropagation(); openMenu(false); } }, true);
+['exampleBtn','clearBtn','mFit','mBack','mFwd','mHelp','mGit'].forEach(id => $(id).addEventListener('click', () => openMenu(false)));
+// Replace the board with the example board, as one undo step
+function loadExample(){
+  if (editing) endEdit();
+  const ex = onGrid(sample()); ex.nextId = Math.max(ex.nextId, state.nextId);
+  state = ex; setSel(); armed = null; renderAll(); commit(); fitBoard();
+}
+$('exampleBtn').onclick = loadExample;
+$('mFit').onclick = fitBoard;
+$('mBack').onclick = () => goPlace(-1);
+$('mFwd').onclick = () => goPlace(1);
+$('mHelp').onclick = () => setHelp(true);
+['zoomIn','zoomOut','zoomBtn','homeBtn'].forEach(id => $(id).addEventListener('pointerdown', e => e.preventDefault()));
+$('zoomIn').onclick = () => zoomAt(view.z*1.2, viewport.clientWidth/2, viewport.clientHeight/2);
+$('zoomOut').onclick = () => zoomAt(view.z/1.2, viewport.clientWidth/2, viewport.clientHeight/2);
 $('clearBtn').onclick = () => {
   if (editing) endEdit();
   if (!state.boxes.length) return;
@@ -1313,7 +1381,7 @@ function setPin(on){ helpPinned = on; $('helpPin').setAttribute('aria-pressed', 
 $('helpPin').onclick = () => setPin(!helpPinned);
 setPin(helpPinned);
 document.addEventListener('pointerdown', e => {
-  if (!helpPinned && document.body.classList.contains('help-open') && !e.target.closest('#help, #helpBtn')) setHelp(false);
+  if (!helpPinned && document.body.classList.contains('help-open') && !e.target.closest('#help, #helpBtn, #mHelp')) setHelp(false);
 }, true);
 $('helpBtn').onclick = () => setHelp(true);
 
@@ -1333,6 +1401,7 @@ function selectionBoard(){
 const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 'es'.slice(w.endsWith('x') ? 0 : 1));
 function openShareMenu(open){
   const m = $('shareMenu'); m.hidden = !open; $('shareBtn').setAttribute('aria-expanded', open);
+  if (open) openMenu(false);
   if (!open) return;
   $('shareAllNote').textContent = `${plural(state.boxes.length, 'box')}, ${state.links.length} line${state.links.length === 1 ? '' : 's'}`;
   const sb = selectionBoard(), any = sb.boxes.length > 0;
