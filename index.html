@@ -1190,7 +1190,7 @@ function deleteSel(){
 // with the box texts as plain text for other apps. A copy kept here covers browsers that skip the
 // copy/paste events when no text is selected.
 const CLIP_TYPE = 'application/x-explainer+json';
-let clip = null, pasteN = 0, clipEvent = false;
+let clip = null, pasteN = 0, clipKey = null;
 const clipText = c => c.boxes.map(b => b.text).filter(Boolean).join('\n');
 function copySel(cut){
   if (!hasSel()) return false;
@@ -1224,20 +1224,27 @@ function readClip(e){
   return null;
 }
 const onBoard = e => !editing && !(e.target.closest && e.target.closest('input, textarea, [contenteditable="true"], [contenteditable="plaintext-only"]'));
-document.addEventListener('copy', e => { clipEvent = true; if (!onBoard(e) || !hasSel()) return;
+document.addEventListener('copy', e => { if (claimed(e)) return; if (!onBoard(e) || !hasSel()) return;
   if (copySel(false)){ e.preventDefault(); e.clipboardData.setData('text/plain', clipText(clip)); e.clipboardData.setData(CLIP_TYPE, JSON.stringify(clip)); } });
-document.addEventListener('cut', e => { clipEvent = true; if (!onBoard(e) || !hasSel()) return;
+document.addEventListener('cut', e => { if (claimed(e)) return; if (!onBoard(e) || !hasSel()) return;
   if (copySel(true)){ e.preventDefault(); e.clipboardData.setData('text/plain', clipText(clip)); e.clipboardData.setData(CLIP_TYPE, JSON.stringify(clip)); } });
-document.addEventListener('paste', e => { clipEvent = true; if (!onBoard(e)) return;
+document.addEventListener('paste', e => { if (claimed(e)) return; if (!onBoard(e)) return;
   const c = readClip(e);
   if (c){ e.preventDefault(); if (!clip || JSON.stringify(c) !== JSON.stringify(clip)){ clip = c; pasteN = 0; } pasteClip(clip); }
   else if (clip && (e.clipboardData && e.clipboardData.getData('text/plain')) === clipText(clip)){ e.preventDefault(); pasteClip(clip); }
 });
 // Fallbacks for browsers that send no copy/paste event when nothing is text-selected
-// (the event, when it comes, arrives before this timeout runs)
+// Each key press is handled once: by its copy/cut/paste event, or, if none has come after a moment,
+// by the fallback. The event can arrive late (after the clipboard is read), so a late event for a
+// press the fallback already handled is swallowed rather than pasting a second time.
 function keyCopy(k){
-  clipEvent = false;
-  setTimeout(() => { if (clipEvent || editing) return; k === 'v' ? pasteClip(clip) : copySel(k === 'x'); }, 0);
+  const p = clipKey = { k, done:false, t: performance.now() };
+  setTimeout(() => { if (p.done || editing) return; p.done = true; k === 'v' ? pasteClip(clip) : copySel(k === 'x'); }, 300);
+}
+function claimed(e){
+  const p = clipKey; if (!p || performance.now() - p.t > 2000) return false; // not from a recent key press
+  if (p.done){ if (onBoard(e)) e.preventDefault(); return true; }
+  p.done = true; return false;
 }
 // Buttons must not steal focus mid-edit, so undo/redo continue the typing session
 ['undoBtn','redoBtn'].forEach(id => $(id).addEventListener('pointerdown', e => e.preventDefault()));
