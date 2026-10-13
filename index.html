@@ -347,7 +347,7 @@ body.help-open .wl-help{display:none}
 </div>
 <div id="toast" role="status"></div>
 <aside id="help" aria-label="Shortcuts">
-  <div class="help-head"><span>Shortcuts</span><span class="help-actions"><button id="helpPin" type="button" aria-pressed="false" aria-label="Pin shortcuts" title="Pin: keep open while you work"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 1.5l4 4-1.6.6-2.6 2.6.4 3.3-1.1 1.1-3-3-3.6 3.6-.7-.7 3.6-3.6-3-3 1.1-1.1 3.3.4 2.6-2.6z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></button><button id="helpMin" type="button" aria-label="Minimise help" title="Minimise">–</button></span></div>
+  <div class="help-head"><span>Shortcuts</span><span class="help-actions"><button id="helpPin" type="button" aria-pressed="false" aria-label="Keep shortcuts open" title="Keep open while you work"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 1.5l4 4-1.6.6-2.6 2.6.4 3.3-1.1 1.1-3-3-3.6 3.6-.7-.7 3.6-3.6-3-3 1.1-1.1 3.3.4 2.6-2.6z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></button><button id="helpMin" type="button" aria-label="Minimise help" title="Minimise">–</button></span></div>
   <dl>
     <dt>Drag on empty space</dt><dd>New box</dd>
     <dt>Double-click empty space</dt><dd>New box, size of your last</dd>
@@ -376,16 +376,16 @@ body.help-open .wl-help{display:none}
     <dt><kbd class="mod">Ctrl</kbd> <kbd>Z</kbd></dt><dd>Undo</dd>
     <dt><kbd>⇧</kbd> <kbd class="mod">Ctrl</kbd> <kbd>Z</kbd></dt><dd>Redo</dd>
     <dt>Hover a line, drag</dt><dd>New line from its end</dd>
-    <dt>Drag 📍 onto the board</dt><dd>Add a pin</dd>
+    <dt>Drag or click 📍</dt><dd>Add a pin</dd>
     <dt>Click a pin</dt><dd>Jump there</dd>
     <dt>Drag a pin chip onto the board</dt><dd>Move the pin</dd>
-    <dt>Right-click a pin</dt><dd>Rename or delete</dd>
+    <dt>Right-click or long-press a pin</dt><dd>Rename or delete</dd>
     <dt><kbd>Alt</kbd> <kbd>←</kbd> / <kbd>→</kbd></dt><dd>Jump between edits</dd>
     <dt>Top island</dt><dd>Style of new lines</dd>
     <dt><kbd>G</kbd></dt><dd>Snap to grid on/off</dd>
     <dt><kbd>T</kbd></dt><dd>Theme: Auto / Light / Dark</dd>
     <dt><kbd>Esc</kbd></dt><dd>Stop editing</dd>
-    <dt>Pin icon above</dt><dd>Keep this open</dd>
+    <dt>Keep-open icon above</dt><dd>Keep this open</dd>
   </dl>
 </aside>
 <button id="helpBtn" type="button" aria-label="Show shortcuts" title="Shortcuts">?</button>
@@ -438,10 +438,14 @@ const currentSettings = () => ({ t: theme, s: snap ? 1 : 0, c: { off:0, sentence
 const pack = s => { const a = [1, ...boardOnly(s), currentSettings()], p = pinsPacked(s); if (p.length) a.push(p); return JSON.stringify(a); };
 function unpack(str){
   const a = JSON.parse(str); if (!Array.isArray(a) || a[0] !== 1) return null;
-  return { nextId: a[1], example: false, settings: a[4] && typeof a[4] === 'object' ? a[4] : null,
+  const r = { nextId: a[1], example: false, settings: a[4] && typeof a[4] === 'object' ? a[4] : null,
     boxes: a[2].map(([id, x, y, w, h, text]) => ({ id, x, y, w, h, text: String(text) })),
     links: a[3].filter(l => A[l[2]] && A[l[4]]).map(([id, from, fa, to, ta, ar, cv]) => ({ id, from, fa, to, ta, arrow: !!ar, back: ar === 2, curve: !!cv })),
-    pins: Array.isArray(a[5]) ? a[5].filter(p => Array.isArray(p) && Number.isInteger(p[0]) && isFinite(p[1]) && isFinite(p[2])).map(([id, x, y, name, c]) => ({ id, x, y, name: String(name || 'Pin').slice(0, 60), c: ((c|0) % 8 + 8) % 8 })) : [] };
+    pins: Array.isArray(a[5]) ? a[5].filter(p => Array.isArray(p) && Number.isInteger(p[0]) && isFinite(p[1]) && isFinite(p[2])).map(([id, x, y, name, c]) => ({ id, x: +x, y: +y, name: String(name || 'Pin').slice(0, 60), c: ((c|0) % 8 + 8) % 8 })) : [] };
+  // one pin per id (first wins), and new ids always start above every pin id
+  const seen = new Set(); r.pins = r.pins.filter(p => !seen.has(p.id) && seen.add(p.id));
+  r.pins.forEach(p => { if (!(r.nextId > p.id)) r.nextId = p.id + 1; });
+  return r;
 }
 const b64u = bytes => { let s = ''; for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
 const unb64u = t => { const s = atob(t.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - t.length % 4) % 4)); return Uint8Array.from(s, c => c.charCodeAt(0)); };
@@ -786,34 +790,41 @@ function downPin(e, id){
   const p = pin(id); if (!p) return;
   const sx = e.clientX, sy = e.clientY, ox = p.x, oy = p.y, start = pinAt(e); let moved = false;
   const el = () => document.querySelector(`.pin[data-pin="${id}"]`);
+  let lp = null, longPressed = false; const lpStop = () => { clearTimeout(lp); lp = null; };
+  if (e.pointerType !== 'mouse') lp = setTimeout(() => { lp = null; longPressed = true; openPinMenu(id, sx, sy); }, LONG_PRESS_MS);
   gesture = { active:false,
-    move(ev){ if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 4) return; moved = true; this.active = true;
+    move(ev){ if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 4) return; moved = true; lpStop(); if (longPressed) return; this.active = true;
       const q = pinAt(ev), m = el(); if (m){ m.style.left = (ox + q.x - start.x) + 'px'; m.style.top = (oy + q.y - start.y) + 'px'; } },
-    up(ev){ if (!moved){ jumpToPin(id); return; } const q = pinAt(ev); movePin(id, ox + q.x - start.x, oy + q.y - start.y); },
-    cancel(){ renderPins(); } };
+    up(ev){ lpStop(); if (longPressed) return; if (!moved){ jumpToPin(id); return; } const q = pinAt(ev); movePin(id, ox + q.x - start.x, oy + q.y - start.y); },
+    cancel(){ lpStop(); renderPins(); } };
 }
+const LONG_PRESS_MS = 500; // touch and pen: Safari sends no contextmenu on a long press
 let pinDragJustEnded = 0; // a chip drag must not also count as a click that jumps
 $('pinChips').addEventListener('click', e => { if (e.target.closest('.pname-edit') || performance.now() - pinDragJustEnded < 300) return; const c = e.target.closest('.pchip'); if (c) jumpToPin(+c.dataset.pin); });
 $('pinChips').addEventListener('dblclick', e => { const c = e.target.closest('.pchip'); if (c && !e.target.closest('.pname-edit')) renamePin(+c.dataset.pin); });
 $('pinChips').addEventListener('pointerdown', e => {
   const c = e.target.closest('.pchip'); if (!c || e.button !== 0 || e.target.closest('.pname-edit')) return;
   e.preventDefault();
-  const id = +c.dataset.pin, p = pin(id), sx = e.clientX, sy = e.clientY; let moved = false, ghost = null;
+  const id = +c.dataset.pin, p = pin(id), sx = e.clientX, sy = e.clientY; let moved = false, ghost = null, longPressed = false, lp = null;
+  const lpStop = () => { clearTimeout(lp); lp = null; };
+  if (e.pointerType !== 'mouse') lp = setTimeout(() => { lp = null; longPressed = true; openPinMenu(id, sx, sy); }, LONG_PRESS_MS);
   const overBoard = ev => { const el = document.elementFromPoint(ev.clientX, ev.clientY); return el && el.closest('#viewport') && !el.closest('.isl, #menu, #help, #helpBtn, #selbar, #pinMenu'); };
   const marker = () => document.querySelector(`.pin[data-pin="${id}"]`);
   const tidy = () => { document.body.classList.remove('pin-drag'); if (ghost) ghost.remove(); ghost = null; };
   gesture = {
     move(ev){
+      if (longPressed) return;
       if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 4) return;
-      if (!moved){ moved = true; document.body.classList.add('pin-drag'); const m = marker(); if (m) m.classList.add('ghost');
+      if (!moved){ moved = true; lpStop(); document.body.classList.add('pin-drag'); const m = marker(); if (m) m.classList.add('ghost');
         ghost = document.createElement('div'); ghost.className = 'pin'; ghost.innerHTML = pinSvg(p.c); $('pinLayer').appendChild(ghost); }
       const q = pinAt(ev); ghost.style.left = q.x + 'px'; ghost.style.top = q.y + 'px'; ghost.style.visibility = overBoard(ev) ? 'visible' : 'hidden';
     },
-    up(ev){ tidy();
+    up(ev){ tidy(); lpStop();
+      if (longPressed){ pinDragJustEnded = performance.now(); return; } // the press opened the menu: no jump
       if (!moved) return; // a plain click: the chip's click handler jumps
       pinDragJustEnded = performance.now();
       if (overBoard(ev)){ const q = pinAt(ev); movePin(id, q.x, q.y); } renderPins(); },
-    cancel(){ tidy(); renderPins(); }
+    cancel(){ tidy(); lpStop(); renderPins(); }
   };
 });
 function nextPinName(){ const used = new Set(pins().map(p => (/^Pin (\d+)$/.exec(p.name) || [])[1]).filter(Boolean).map(Number));
@@ -1701,7 +1712,7 @@ function setHelp(open){ document.body.classList.toggle('help-open', open); try {
 $('helpMin').onclick = () => setHelp(false);
 // Unpinned (the default), the panel hides as soon as you click or start working anywhere else
 let helpPinned = false; try { helpPinned = localStorage.getItem('explainer.helpPin') === 'on'; } catch(e){}
-function setPin(on){ helpPinned = on; $('helpPin').setAttribute('aria-pressed', on); $('helpPin').title = on ? 'Unpin: hide when you click elsewhere' : 'Pin: keep open while you work';
+function setPin(on){ helpPinned = on; $('helpPin').setAttribute('aria-pressed', on); $('helpPin').title = on ? 'Stop keeping open: hide when you click elsewhere' : 'Keep open while you work';
   try { localStorage.setItem('explainer.helpPin', on ? 'on' : 'off'); } catch(e){} settingChanged(); }
 $('helpPin').onclick = () => setPin(!helpPinned);
 setPin(helpPinned);
