@@ -461,7 +461,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `nearDot` toggles `#viewport.linking`; CSS `.box`, `.box.editing .txt`, `#viewport.linking`.
 
 ### D-051: Cmd/Ctrl+click a box to draw an arrow to it
-- Status: Active
+- Status: Amended by D-052
 - Date: 2026-10-13
 - Decision: With a box selected or being edited, Cmd+click (Mac) or Ctrl+click (Windows/Linux)
   on another box draws an arrow from the selected box to it (from every selected box, if several
@@ -474,3 +474,23 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Why: User asked for a quick way to connect boxes from the keyboard and mouse.
 - Code: `linkSources`, `facing`, `connectTo`, viewport `pointerdown`, `nearDot`, `modCursor`,
   `dblclick`; shortcuts panel; README table.
+
+### D-052: Shift for a plain line, Shift+Ctrl for arrows at both ends
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-051
+- Decision: When dropping a line dragged from a dot, holding Shift makes it a plain line (no
+  arrowheads) and holding Shift+Ctrl gives arrowheads at both ends; the keys are read when the
+  line is dropped, and the preview follows them during the drag. The same applies to
+  Cmd/Ctrl+click (D-051): Cmd+Shift+click (Ctrl+Shift+click on Windows) draws a plain line, and
+  Cmd+Shift+Ctrl+click on Mac draws arrows at both ends. On Windows that last one is
+  Ctrl+Shift+Alt+click, because Ctrl already means "connect" there. Shift+pressing near a dot now
+  starts a line if you drag; Shift+click without dragging still adds to or removes from the
+  selection. Double-clicking a dot (D-011) still gives a line without an arrow.
+- Why: User asked for modifier keys that choose a plain line or a two-way arrow, both when
+  dragging and when Cmd/Ctrl+clicking; they chose these key combinations when asked about the
+  Windows clash.
+- Code: `heads`, `linkProps`, `connectTo`, `downHandle` (`shift0`), link field `back`
+  (share format: arrow value 2 = both ends; older links still load, and older versions of the
+  app read 2 as a normal arrow), `marker-start` with `orient="auto-start-reverse"`; shortcuts
+  panel (`.both` key label); README.

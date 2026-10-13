@@ -41,7 +41,8 @@ resize.
 
 **Connect.** Move toward the edge of a box and the nearest connection dot appears. Drag it onto
 another box. Lines find their own way around other boxes, and you can choose angled or curved lines.
-Double-click a dot first if you want a line without an arrow.
+Hold Shift as you drop it for a plain line without an arrow, or Shift+Ctrl for arrows at both ends.
+(Double-clicking a dot before dragging also gives a line without an arrow.)
 
 **Arrange.** Drag a box from anywhere to move it, and its lines follow. Drag across several items to
 select them, or Shift+click to add to the selection. Boxes snap to the grid unless you turn it off.
@@ -63,7 +64,10 @@ Your settings, including light or dark mode, travel with the link.
 | Add to selection | Shift+click, or drag across items |
 | Delete selected | Backspace or Delete |
 | Delete the box you're typing in, when it's empty | Backspace or Delete |
+| Plain line / arrows both ways | Hold Shift / Shift+Ctrl while dropping a line |
 | Arrow from the selected box to another box | ⌘+click the other box (Ctrl+click on Windows) |
+| …a line without arrowheads instead | ⌘+Shift+click (Ctrl+Shift+click on Windows) |
+| …arrowheads at both ends instead | ⌘+Shift+Ctrl+click (Ctrl+Shift+Alt+click on Windows) |
 | Select everything | Ctrl/⌘ A |
 | Undo / redo | Ctrl/⌘ Z / Shift+Ctrl/⌘ Z |
 | Jump between your recent edits | Alt+← / Alt+→ |

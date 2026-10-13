@@ -169,8 +169,8 @@ body.help-open #helpBtn{display:none}
   <div id="world">
     <svg id="links" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <marker id="ah" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path class="ah" d="M0,1 L12,6 L0,11 z"/></marker>
-        <marker id="ahs" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path class="ah-sel" d="M0,1 L12,6 L0,11 z"/></marker>
+        <marker id="ah" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path class="ah" d="M0,1 L12,6 L0,11 z"/></marker>
+        <marker id="ahs" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path class="ah-sel" d="M0,1 L12,6 L0,11 z"/></marker>
       </defs>
       <g id="linkG"></g>
       <path id="tmp" class="tmp" d=""/>
@@ -194,9 +194,13 @@ body.help-open #helpBtn{display:none}
     <dt>Drag a box</dt><dd>Move</dd>
     <dt>Drag a dot onto a box</dt><dd>Connect</dd>
     <dt>Double-click a dot, drag</dt><dd>Line, no arrow</dd>
+    <dt>Hold <kbd>⇧</kbd> while dropping a line</dt><dd>Line, no arrow</dd>
+    <dt>Hold <kbd>⇧</kbd> <kbd>Ctrl</kbd> while dropping</dt><dd>Arrows both ways</dd>
     <dt>Scroll · <kbd>Space</kbd>+drag</dt><dd>Pan</dd>
     <dt><kbd class="mod">Ctrl</kbd>+scroll</dt><dd>Zoom</dd>
     <dt><kbd class="mod">Ctrl</kbd>+click a box</dt><dd>Arrow from the selected box</dd>
+    <dt><kbd class="mod">Ctrl</kbd> <kbd>⇧</kbd>+click a box</dt><dd>Line from the selected box</dd>
+    <dt><kbd class="mod">Ctrl</kbd> <kbd>⇧</kbd> <kbd class="both">Alt</kbd>+click a box</dt><dd>Both ways from the selected box</dd>
     <dt><kbd class="mod">Ctrl</kbd> <kbd>A</kbd></dt><dd>Select all</dd>
     <dt><kbd>⌫</kbd> · <kbd>Del</kbd></dt><dd>Delete selected</dd>
     <dt><kbd>⌫</kbd> in an empty box</dt><dd>Delete the box</dd>
@@ -255,7 +259,7 @@ function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch
 
 /* ---------- board in the URL (compressed, like Mermaid's share links) ---------- */
 // The whole board is packed into a compact array, deflated, and base64url-encoded into the #hash.
-const boardOnly = s => [s.nextId, s.boxes.map(b => [b.id, b.x, b.y, b.w, b.h, b.text]), s.links.map(l => [l.id, l.from, l.fa, l.to, l.ta, l.arrow ? 1 : 0, l.curve ? 1 : 0])];
+const boardOnly = s => [s.nextId, s.boxes.map(b => [b.id, b.x, b.y, b.w, b.h, b.text]), s.links.map(l => [l.id, l.from, l.fa, l.to, l.ta, l.back ? 2 : l.arrow ? 1 : 0, l.curve ? 1 : 0])];
 const sameBoard = (a, b) => JSON.stringify(boardOnly(a)) === JSON.stringify(boardOnly(b));
 // Every setting travels with the board: theme, snap, auto-capitalise, line style, shortcuts panel
 const currentSettings = () => ({ t: theme, s: snap ? 1 : 0, c: autoCap ? 1 : 0, l: lineStyle === 'curved' ? 1 : 0,
@@ -265,7 +269,7 @@ function unpack(str){
   const a = JSON.parse(str); if (!Array.isArray(a) || a[0] !== 1) return null;
   return { nextId: a[1], example: false, settings: a[4] && typeof a[4] === 'object' ? a[4] : null,
     boxes: a[2].map(([id, x, y, w, h, text]) => ({ id, x, y, w, h, text: String(text) })),
-    links: a[3].filter(l => A[l[2]] && A[l[4]]).map(([id, from, fa, to, ta, ar, cv]) => ({ id, from, fa, to, ta, arrow: !!ar, curve: !!cv })) };
+    links: a[3].filter(l => A[l[2]] && A[l[4]]).map(([id, from, fa, to, ta, ar, cv]) => ({ id, from, fa, to, ta, arrow: !!ar, back: ar === 2, curve: !!cv })) };
 }
 const b64u = bytes => { let s = ''; for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
 const unb64u = t => { const s = atob(t.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - t.length % 4) % 4)); return Uint8Array.from(s, c => c.charCodeAt(0)); };
@@ -578,7 +582,8 @@ function renderLinks(extra){
     const a = box(l.from), b = box(l.to); if (!a || !b) continue;
     const c = linkGeom(a, l.fa, b, l.ta, l.curve); pts.push(...c.pts);
     const d = c.d, on = sel.links.has(l.id);
-    s += `<path class="ln${on?' sel':''}" d="${d}"${l.arrow ? ` marker-end="url(#${on?'ahs':'ah'})"` : ''}/>`
+    const m = `url(#${on?'ahs':'ah'})`;
+    s += `<path class="ln${on?' sel':''}" d="${d}"${l.arrow ? ` marker-end="${m}"` : ''}${l.back ? ` marker-start="${m}"` : ''}/>`
        + `<path class="hit" data-link="${l.id}" d="${d}"/>`;
   }
   linkG.innerHTML = s;
@@ -809,9 +814,9 @@ viewport.addEventListener('pointerdown', e => {
   if (e.button !== 0) return;
   const h = e.target.closest('.h'), bx = e.target.closest('.box'), hit = e.target.closest('.hit');
   // Cmd/Ctrl+click another box connects the selected (or edited) box to it
-  if (bx && (e.metaKey || e.ctrlKey) && !e.shiftKey && linkSources(+bx.dataset.id).length){ e.preventDefault(); return connectTo(+bx.dataset.id); }
+  if (bx && (e.metaKey || e.ctrlKey) && linkSources(+bx.dataset.id).length){ e.preventDefault(); return connectTo(+bx.dataset.id, e); }
   // A visible dot wins: pressing and dragging near it always draws a line
-  if (!e.shiftKey && e.pointerType !== 'touch'){
+  if (e.pointerType !== 'touch'){
     nearDot(e);
     if (nearEl){ const bid = +nearEl.closest('.box').dataset.id, a = nearEl.dataset.a;
       return nearLink != null ? downHandle(e, bid, a, dotDist(e, bid, a) <= 7, nearLink) : downHandle(e, bid, a, onDot(e, bid, a)); }
@@ -839,16 +844,23 @@ function facing(a, b){
   const dx = (b.x + b.w/2) - (a.x + a.w/2), dy = (b.y + b.h/2) - (a.y + a.h/2);
   return gx >= gy ? (dx >= 0 ? ['e', 'w'] : ['w', 'e']) : (dy >= 0 ? ['s', 'n'] : ['n', 's']);
 }
+// Arrowheads for a new line from the keys held: Shift = plain line, Shift+Ctrl = arrows at both ends.
+// Cmd/Ctrl+click already uses Ctrl on Windows, so there the both-ends key is Alt (Cmd+Shift+Ctrl on Mac).
+function heads(e, click, noArrow){
+  if (!e.shiftKey) return noArrow ? { arrow:false } : { arrow:true };
+  return (click && !isMac ? e.altKey : e.ctrlKey) ? { arrow:true, back:true } : { arrow:false };
+}
+const linkProps = h => h.back ? { arrow:true, back:true } : { arrow:h.arrow };
 // Draw an arrow from each source box to `tid`, then select `tid` so the next Cmd/Ctrl+click continues the chain
-function connectTo(tid){
+function connectTo(tid, e){
   const srcs = linkSources(tid);
   if (editing) endEdit();
   focusBoard(); armed = null;
-  let n = 0;
+  const h = heads(e, true); let n = 0;
   for (const sid of srcs){
     if (state.links.some(l => l.from === sid && l.to === tid)) continue;
     const [fa, ta] = facing(box(sid), box(tid));
-    state.links.push({ id: state.nextId++, from:sid, fa, to:tid, ta, arrow:true, curve: lineStyle === 'curved' }); n++;
+    state.links.push({ id: state.nextId++, from:sid, fa, to:tid, ta, ...linkProps(h), curve: lineStyle === 'curved' }); n++;
   }
   setSel([tid]); lastSelectedId = tid;
   renderAll(); commit();
@@ -893,8 +905,8 @@ function nearDot(e){
   }
   if (!found) nearLink = null;
   if (found !== nearEl){ nearEl && nearEl.classList.remove('near'); found && found.classList.add('near'); nearEl = found; }
-  const ou = (e.metaKey || e.ctrlKey) && !e.shiftKey && document.elementFromPoint(e.clientX, e.clientY), over = ou && ou.closest('.box');
-  viewport.classList.toggle('linking', (!!found || !!(over && linkSources(+over.dataset.id).length)) && !e.shiftKey);
+  const ou = (e.metaKey || e.ctrlKey) && document.elementFromPoint(e.clientX, e.clientY), over = ou && ou.closest('.box');
+  viewport.classList.toggle('linking', !!found || !!(over && linkSources(+over.dataset.id).length));
 }
 function endGesture(e){ if (!gesture) return; const g = gesture; gesture = null; try { g.up(e); } finally { cleanupGesture(); } }
 function cancelGesture(){ if (!gesture) return; const g = gesture; gesture = null; try { g.cancel && g.cancel(); } finally { cleanupGesture(); } }
@@ -1076,8 +1088,8 @@ function downHandle(e, id, k, exact = true, linkId = null){
   e.preventDefault(); e.stopPropagation(); endEdit(); focusBoard();
   const b = box(id), key = id + ':' + k, now = performance.now();
   const quick = exact && lastHandle.key === key && now - lastHandle.t < 420;
-  const noArrow = armed === key || quick;
-  if (linkId == null){ setSel([id]); lastSelectedId = id; } renderSel();
+  const noArrow = armed === key || quick, shift0 = e.shiftKey;
+  if (linkId == null && !shift0){ setSel([id]); lastSelectedId = id; } renderSel();
   const from = anchorPt(b, k); let dragged = false, target = null, ta = null;
   const clearTarget = () => { if (target){ const t = els.get(target); if (t){ t.classList.remove('target'); t.querySelectorAll('.snap').forEach(x => x.classList.remove('snap')); } } };
   gesture = { auto:true, active:false,
@@ -1097,20 +1109,26 @@ function downHandle(e, id, k, exact = true, linkId = null){
       const c = target ? linkGeom(b, k, box(target), ta, lineStyle === 'curved') : { pts: [from, { x: from.x + NRM[k][0]*STUB, y: from.y + NRM[k][1]*STUB }, end] };
       if (!target) c.d = roundedPath(c.pts, lineStyle === 'curved' ? Infinity : 14);
       tmp.setAttribute('d', c.d);
-      if (noArrow) tmp.removeAttribute('marker-end'); else tmp.setAttribute('marker-end', 'url(#ahs)');
+      const h = heads(ev, false, noArrow); // the keys can change mid-drag; the preview follows
+      if (h.arrow) tmp.setAttribute('marker-end', 'url(#ahs)'); else tmp.removeAttribute('marker-end');
+      if (h.back) tmp.setAttribute('marker-start', 'url(#ahs)'); else tmp.removeAttribute('marker-start');
       renderLinks(c.pts);
     },
-    up(){
+    up(ev){
       tmp.setAttribute('d', ''); clearTarget();
       if (dragged){
         lastHandle = { key:'', t:0 };
         if (target){
-          const l = { id: state.nextId++, from:id, fa:k, to:target, ta, arrow: !noArrow, curve: lineStyle === 'curved' };
+          const l = { id: state.nextId++, from:id, fa:k, to:target, ta, ...linkProps(heads(ev || lastEv || {}, false, noArrow)), curve: lineStyle === 'curved' };
           state.links.push(l); armed = null; setSel([], [l.id]); commit();
         }
         renderSel();
         return;
       }
+      if (shift0){ // Shift+click without a drag: add to or remove from the selection, as elsewhere
+        lastHandle = { key:'', t:0 };
+        const set = linkId != null ? sel.links : sel.boxes, v = linkId != null ? linkId : id;
+        set.has(v) ? set.delete(v) : set.add(v); renderSel(); return; }
       if (!exact){ // a plain click near a dot selects the box, or the line if it started on one
         lastHandle = { key:'', t:0 };
         if (linkId != null) setSel([], [linkId]);
@@ -1197,6 +1215,7 @@ let tt; function toast(m){ toastEl.textContent = m; toastEl.classList.add('on');
 // Help box: open by default on large screens (remembered), a "?" button on small ones
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 document.querySelectorAll('#help .mod').forEach(k => k.textContent = isMac ? '⌘' : 'Ctrl');
+document.querySelectorAll('#help .both').forEach(k => k.textContent = isMac ? 'Ctrl' : 'Alt'); // see heads()
 const small = () => matchMedia('(max-width: 760px)').matches;
 let helpPref = null; try { helpPref = localStorage.getItem('explainer.help'); } catch(e){}
 // Remembered at every screen size; on a first visit it starts open (except on phone-width screens)
