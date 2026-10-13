@@ -27,6 +27,7 @@ It describes how the app must behave.
 - History: `commit()` snapshots `state` for undo/redo; call it after every user-visible change.
 - Gestures: viewport `pointerdown` dispatches to `downCanvas`, `downBox`, `downHandle`, `startPan`;
   the active gesture lives in `gesture` and must end via `endGesture`/`cancelGesture`.
+- Chrome: floating islands (#islTL/#islTC/#islTR/#islBL), ☰ #menu, #selbar (positionSelbar), #welcome (updateWelcome).
 - Lines: `linkGeom` → `route` (orthogonal path search) or `arcCurve`; drawn in `renderLinks`.
 - Persistence: localStorage (`explainer.*` keys) plus the URL hash via `pack`/`encodeBoard`.
   If you add state or a setting, include it in `pack`/`unpack` or `currentSettings`/`applySettings`,

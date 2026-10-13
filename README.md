@@ -37,16 +37,21 @@ of the way.
 
 **Draw.** Drag on empty space, or double-click it, and a box appears with the cursor already in it.
 Text stays centred and wraps. When the box fills up it grows by half again, so you never stop to
-resize. Text shows in capitals by default; the **All caps** button switches to **Sentence case**
+resize. Text shows in capitals by default; **Capitals**, in the ☰ menu, switches to **Sentence case**
 (a capital starts each sentence) or **As typed**, and your text is kept as you typed it.
 
 **Connect.** Move toward the edge of a box and the nearest connection dot appears. Drag it onto
 another box. Lines find their own way around other boxes, and you can choose angled or curved lines.
+The island at the top centre sets the style and arrowheads of new lines.
 Hold Shift as you drop it for a plain line without an arrow, or Shift+Ctrl for arrows at both ends.
 (Double-clicking a dot before dragging also gives a line without an arrow.)
 
 **Arrange.** Drag a box from anywhere to move it, and its lines follow. Drag across several items to
 select them, or Shift+click to add to the selection. Boxes snap to the grid unless you turn it off.
+
+**Change a line.** Click a line and a toolbar appears above it: angled or curved, arrow at the end,
+plain or both ends, reverse direction, copy and delete. The ☰ menu holds the theme, capitals and
+snap to grid.
 
 **Share.** The whole board lives in the page's address, so the link *is* the diagram. Refresh and it
 is still there. Use **Share** to copy a link to the whole board or to only the items you selected.
@@ -66,6 +71,7 @@ Your settings, including light or dark mode, travel with the link.
 | Delete selected | Backspace or Delete |
 | Delete the box you're typing in, when it's empty | Backspace or Delete |
 | Plain line / arrows both ways | Hold Shift / Shift+Ctrl while dropping a line |
+| Change a selected line (style, arrowheads, reverse) | Use the toolbar above it |
 | Arrow from the selected box to another box | ⌘+click the other box (Ctrl+click on Windows) |
 | …a line without arrowheads instead | ⌘+Shift+click (Ctrl+Shift+click on Windows) |
 | …arrowheads at both ends instead | ⌘+Shift+Ctrl+click (Ctrl+Shift+Alt+click on Windows) |

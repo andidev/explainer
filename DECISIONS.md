@@ -320,7 +320,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `places`, `recordPlace`, `goPlace`.
 
 ### D-036: Line style: Angled or Curved, per line
-- Status: Active
+- Status: Amended by D-060
 - Date: 2026-10-13
 - Amends: D-028
 - Decision: The "Angled | Curved" switch changes the selected lines, or with nothing selected sets
@@ -329,7 +329,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `lineStyle`, `setLineStyle`, `arcCurve`, link field `curve`.
 
 ### D-037: Shortcuts panel remembers its state; open on first visit
-- Status: Amended by D-038
+- Status: Amended by D-038, D-057
 - Amends: D-022
 - Date: 2026-10-13
 - Decision: Open or minimised is remembered at every screen size. On a first visit it opens,
@@ -476,7 +476,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   `dblclick`; shortcuts panel; README table.
 
 ### D-052: Shift for a plain line, Shift+Ctrl for arrows at both ends
-- Status: Active
+- Status: Amended by D-062
 - Date: 2026-10-13
 - Amends: D-051
 - Decision: When dropping a line dragged from a dot, holding Shift makes it a plain line (no
@@ -524,7 +524,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   clipboard type `application/x-explainer+json`; shortcuts panel; README.
 
 ### D-055: GitHub link in the top-right corner
-- Status: Active
+- Status: Amended by D-057
 - Date: 2026-10-13
 - Decision: The header's top-right corner shows the GitHub mark, linking to
   https://github.com/andidev/explainer in a new tab. It stays in that corner at every width; the
@@ -550,3 +550,81 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   toggling all three modes.
 - Code: `capMode`, `setCap`, `CAPS`, `body.caps .txt` (text-transform), `readText` (reads with
   the transform off), `clipText`, `currentSettings`/`applySettings`, `explainer.capmode`, `sample`.
+
+### D-057: Floating islands replace the header
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-055, D-037
+- Decision: There is no header; the board fills the window and small islands float over it.
+  Top-left: the ☰ menu button, the mark, the wordmark and the "Example board" tag. Top-centre:
+  the style for new lines (Angled/Curved and arrowheads). Top-right: the GitHub link and Share.
+  Bottom-left: zoom −, the zoom percentage, zoom +, Fit board, Undo, Redo and the Edits control.
+  Bottom-right: the **?** button for shortcuts. The GitHub link of D-055 now sits in the top-right
+  island. At 860px or less the top-centre island moves under the top row. At 640px or less Fit
+  board and the Edits control move into the ☰ menu, and the "Example board" tag and the words
+  Angled/Curved are hidden. Amending D-037: the shortcuts panel now opens on a first visit only
+  on windows wider than 640px (was 480px). At 860px or less the panel's height is capped so it
+  stays below the top islands.
+- Why: User chose the floating layout inspired by Excalidraw, so the board gets the whole window.
+- Code: `#islTL`, `#islTC`, `#islTR`, `#islBL`, `.isl` and the media queries at 860px and 640px,
+  `setHelp`, `helpPref`.
+
+### D-058: Quiet Share button
+- Status: Active
+- Date: 2026-10-13
+- Decision: Share looks like the other islands: island surface, accent-coloured icon, and a soft
+  accent tint on hover. It is not a solid block of colour.
+- Why: User chose the floating layout inspired by Excalidraw, where Share should not shout.
+- Code: `#shareBtn` and its CSS in `#islTR`.
+
+### D-059: The ☰ menu
+- Status: Active
+- Date: 2026-10-13
+- Decision: The ☰ button opens a menu with: Theme, Capitals and Snap to grid (these rows stay
+  open when clicked so you can cycle them); Open the example board; Clear board; on phone-width
+  windows only, Fit board, Previous edit place and Next edit place; Shortcuts; Source on GitHub.
+  It closes on Esc or a click outside it.
+- Why: User chose the floating layout inspired by Excalidraw, with settings in one menu instead of
+  header buttons.
+- Code: `#menu`, `#menuBtn`, `openMenu`, `#themeBtn`, `#capBtn`, `#snapBtn`, `.phone-only`.
+
+### D-060: Selection toolbar
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-036
+- Decision: Selecting items shows a small toolbar above the selection, or below it when there is
+  no room above (top clearance 64px, or 112px at 860px or less). For selected lines it is placed
+  against the lines plus the boxes they connect, so it never covers those boxes. For lines it
+  has Angled/Curved, arrow at the end / plain / arrows at both ends, and Reverse (shown only when
+  a selected line has an arrow at one end only). Copy and Delete are always shown. Each change is
+  one undo step. The toolbar is hidden while dragging, drawing or editing, and when the whole
+  selection is off-screen. Amending D-036: the top-centre island no longer changes selected lines;
+  it sets the style for new lines only.
+- Why: User chose the floating layout inspired by Excalidraw, with line options next to the line.
+- Code: `#selbar`, `positionSelbar`, `sb*` buttons, `setLineStyle`.
+
+### D-061: Welcome on an empty board
+- Status: Active
+- Date: 2026-10-13
+- Decision: An empty board shows a welcome in the middle: the logo, "Boxes, lines, and nothing in
+  the way.", two hints (double-click to add a box; select a box and ⌘-click another to connect),
+  and the links Open the example board, Shortcuts and Source on GitHub. Two handwritten notes
+  point at the ☰ menu and at **?**; they are hidden at 860px or less, and the shortcuts note is
+  hidden while the shortcuts panel is open. Presses pass through the welcome to the board, apart
+  from its three links. It disappears as soon as there is a box. A first visit still opens the
+  example board (D-053).
+- Why: User chose the floating layout inspired by Excalidraw, where an empty board is welcoming.
+- Code: `#welcome`, `updateWelcome`, `.wl-*` CSS.
+
+### D-062: Arrowheads for new lines
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-052
+- Decision: The top-centre island sets the arrowheads of new lines: arrow at the end (default),
+  plain, or arrows at both ends. The setting is remembered and travels in share links as key `a`
+  (0 none, 1 end, 2 both); a link without `a` leaves the setting unchanged. It does not change
+  existing lines. Holding Shift while dropping a line (plain) or Shift+Ctrl (both ends) still
+  overrides it for that line.
+- Why: User chose the floating layout inspired by Excalidraw, with the new-line style in the
+  top island.
+- Code: `newHeads`, `setNewHeads`, `headsFrom`, `explainer.newheads`, `currentSettings`/`applySettings`.
