@@ -773,18 +773,45 @@ function jumpToPin(id){
   const m = document.querySelector(`.pin[data-pin="${id}"]`);
   if (m){ m.classList.remove('flash'); void m.offsetWidth; m.classList.add('flash'); }
 }
-// A press on a marker: a click jumps to it (Task 3 adds dragging, Task 2 adds the right-click menu)
+// A press on a marker: a click jumps, a drag moves it (one undo step on release)
+function movePin(id, x, y){ const p = pin(id); if (!p || (p.x === x && p.y === y)) return; p.x = x; p.y = y; renderPins(); commit(); }
 function downPin(e, id){
   if (e.button === 2){ openPinMenu(id, e.clientX, e.clientY); return; }
   if (e.button !== 0) return;
   if (editing) endEdit();
-  const sx = e.clientX, sy = e.clientY; let moved = false;
-  gesture = { move(ev){ if (Math.hypot(ev.clientX - sx, ev.clientY - sy) > 4) moved = true; },
-    up(){ if (!moved) jumpToPin(id); }, cancel(){} };
+  const p = pin(id); if (!p) return;
+  const sx = e.clientX, sy = e.clientY, ox = p.x, oy = p.y, start = pinAt(e); let moved = false;
+  const el = () => document.querySelector(`.pin[data-pin="${id}"]`);
+  gesture = { active:false,
+    move(ev){ if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 4) return; moved = true; this.active = true;
+      const q = pinAt(ev), m = el(); if (m){ m.style.left = (ox + q.x - start.x) + 'px'; m.style.top = (oy + q.y - start.y) + 'px'; } },
+    up(ev){ if (!moved){ jumpToPin(id); return; } const q = pinAt(ev); movePin(id, ox + q.x - start.x, oy + q.y - start.y); },
+    cancel(){ renderPins(); } };
 }
-$('pinChips').addEventListener('click', e => { if (e.target.closest('.pname-edit')) return; const c = e.target.closest('.pchip'); if (c) jumpToPin(+c.dataset.pin); });
+let pinDragJustEnded = 0; // a chip drag must not also count as a click that jumps
+$('pinChips').addEventListener('click', e => { if (e.target.closest('.pname-edit') || performance.now() - pinDragJustEnded < 300) return; const c = e.target.closest('.pchip'); if (c) jumpToPin(+c.dataset.pin); });
 $('pinChips').addEventListener('dblclick', e => { const c = e.target.closest('.pchip'); if (c && !e.target.closest('.pname-edit')) renamePin(+c.dataset.pin); });
-$('pinChips').addEventListener('pointerdown', e => { if (e.target.closest('.pchip')) e.preventDefault(); });
+$('pinChips').addEventListener('pointerdown', e => {
+  const c = e.target.closest('.pchip'); if (!c || e.button !== 0 || e.target.closest('.pname-edit')) return;
+  e.preventDefault();
+  const id = +c.dataset.pin, p = pin(id), sx = e.clientX, sy = e.clientY; let moved = false, ghost = null;
+  const overBoard = ev => { const el = document.elementFromPoint(ev.clientX, ev.clientY); return el && el.closest('#viewport') && !el.closest('.isl, #menu, #help, #helpBtn, #selbar, #pinMenu'); };
+  const marker = () => document.querySelector(`.pin[data-pin="${id}"]`);
+  const tidy = () => { document.body.classList.remove('pin-drag'); if (ghost) ghost.remove(); ghost = null; };
+  gesture = {
+    move(ev){
+      if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 4) return;
+      if (!moved){ moved = true; document.body.classList.add('pin-drag'); const m = marker(); if (m) m.classList.add('ghost');
+        ghost = document.createElement('div'); ghost.className = 'pin'; ghost.innerHTML = pinSvg(p.c); $('pinLayer').appendChild(ghost); }
+      const q = pinAt(ev); ghost.style.left = q.x + 'px'; ghost.style.top = q.y + 'px'; ghost.style.visibility = overBoard(ev) ? 'visible' : 'hidden';
+    },
+    up(ev){ tidy();
+      if (!moved) return; // a plain click: the chip's click handler jumps
+      pinDragJustEnded = performance.now();
+      if (overBoard(ev)){ const q = pinAt(ev); movePin(id, q.x, q.y); } renderPins(); },
+    cancel(){ tidy(); renderPins(); }
+  };
+});
 function nextPinName(){ const used = new Set(pins().map(p => (/^Pin (\d+)$/.exec(p.name) || [])[1]).filter(Boolean).map(Number));
   let n = 1; while (used.has(n)) n++; return 'Pin ' + n; }
 function nextPinColor(){ const used = new Set(pins().map(p => p.c)); for (let c = 0; c < PIN_COLORS; c++) if (!used.has(c)) return c; return pins().length % PIN_COLORS; }
@@ -1062,6 +1089,11 @@ function diff(a, b){
       const l = q || p, s = q ? b : a;
       for (const bid of [l.from, l.to]){ const bx = s.boxes.find(x => x.id === bid) || b.boxes.find(x => x.id === bid); if (bx) rects.push(bx); }
     }
+  }
+  const ap = new Map((a.pins || []).map(x => [x.id, x])), bp = new Map((b.pins || []).map(x => [x.id, x]));
+  for (const id of new Set([...ap.keys(), ...bp.keys()])){
+    const p = ap.get(id), q = bp.get(id);
+    if (JSON.stringify(p) !== JSON.stringify(q)){ const r = q || p; rects.push({ x: r.x - 20, y: r.y - 30, w: 40, h: 34 }); }
   }
   return { rect: bounds(rects), ids };
 }
