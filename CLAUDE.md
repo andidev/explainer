@@ -40,6 +40,9 @@ It describes how the app must behave.
   with the in-app shortcuts panel.
 - `docs/` holds the logo (`logo-light.png`, `logo-dark.png`) and README screenshots.
 - `AGENTS.md` points other coding agents to this file.
+- `LICENSE` is MIT. `.github/ISSUE_TEMPLATE/` holds the issue forms.
+- The repo is `andidev/explainer`; GitHub Pages serves `main` at https://andidev.github.io/explainer/,
+  so every push to `main` is live.
 
 ## Checks before committing
 

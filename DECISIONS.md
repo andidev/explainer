@@ -426,3 +426,13 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Why: On short windows the panel's top, including minimise, was pushed off screen.
 - Code: `#help` max-height, sticky `.help-head`.
 
+
+### D-048: Public GitHub repository under the MIT license
+- Status: Active
+- Date: 2026-10-13
+- Decision: Explainer is published as the public repository `andidev/explainer` under the MIT
+  license, and the app is served from GitHub Pages at https://andidev.github.io/explainer/.
+  Issues use bug report and feature request templates; the wiki and projects are off; pull
+  requests are squash-merged and their branches deleted after merging.
+- Why: User asked for a public GitHub repository with an MIT license and the usual configuration.
+- Code: `LICENSE`, `.github/ISSUE_TEMPLATE/`, `README.md` (Try it, License).

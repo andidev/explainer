@@ -11,6 +11,10 @@
 </p>
 
 <p align="center">
+  <a href="https://andidev.github.io/explainer/"><strong>Try it in your browser →</strong></a>
+</p>
+
+<p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.png">
     <img src="docs/screenshot-light.png" alt="Explainer showing a flow of boxes and arrows that explains how a web page loads" width="100%">
@@ -70,7 +74,8 @@ The same list is in the app, behind the **?** button.
 
 ## Run it
 
-Open `index.html` in any modern browser. That's it: there is no build step and no dependencies.
+Use it online at **[andidev.github.io/explainer](https://andidev.github.io/explainer/)**, or open
+`index.html` in any modern browser. That's it: there is no build step and no dependencies.
 
 To put it online, upload the folder to any static host such as GitHub Pages, Netlify or
 Cloudflare Pages.
@@ -80,8 +85,13 @@ Cloudflare Pages.
 | File | What it is |
 |---|---|
 | `index.html` | The entire app: markup, styles and script in one file |
+| `LICENSE` | MIT license |
 | `DECISIONS.md` | Every product decision, numbered `D-001`, `D-002`, …, with overrides marked |
 | `CLAUDE.md` | Notes for AI coding agents working on this repository |
 | `docs/` | Logo and screenshots used in this README |
 
 Changing how Explainer behaves? Read `DECISIONS.md` first and add a decision for your change.
+
+## License
+
+[MIT](LICENSE) © Anders Steiner
