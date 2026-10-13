@@ -16,7 +16,7 @@ body{margin:0;font-size:14px}
 :root{
   --paper:#eef1f6; --dot:#cbd2de; --ink:#1c2333; --box:#ffffff; --line:#3b4459;
   --accent:#2c56e0; --accent-soft:rgba(44,86,224,.14); --muted:#667085; --chrome:rgba(255,255,255,.86);
-  --edge:#d7dce6;
+  --edge:#d7dce6; --danger:#c4302b;
   --pin-0:#e5533d; --pin-1:#1f9e74; --pin-2:#7a5af5; --pin-3:#d4881c; --pin-4:#2f80ed; --pin-5:#d63f8c; --pin-6:#5f8f1f; --pin-7:#0f9bb3;
   --f-display:"Bricolage Grotesque", "Atkinson Hyperlegible", system-ui, sans-serif;
   --f-hand:"Caveat", "Bradley Hand", cursive;
@@ -25,13 +25,13 @@ body{margin:0;font-size:14px}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --paper:#11151c; --dot:#262d3a; --ink:#e7eaf1; --box:#1a202b; --line:#a9b2c4;
   --accent:#7e9bff; --accent-soft:rgba(126,155,255,.18); --muted:#8f98aa; --chrome:rgba(22,27,36,.88);
-  --edge:#2b3240; color-scheme:dark;
+  --edge:#2b3240; --danger:#ff6b62; color-scheme:dark;
   --pin-0:#ff7a63; --pin-1:#4cc79c; --pin-2:#a08bff; --pin-3:#f0a948; --pin-4:#6aa6ff; --pin-5:#f173b3; --pin-6:#93c255; --pin-7:#45c4dc;
 }}
 :root[data-theme="dark"]{
   --paper:#11151c; --dot:#262d3a; --ink:#e7eaf1; --box:#1a202b; --line:#a9b2c4;
   --accent:#7e9bff; --accent-soft:rgba(126,155,255,.18); --muted:#8f98aa; --chrome:rgba(22,27,36,.88);
-  --edge:#2b3240; color-scheme:dark;
+  --edge:#2b3240; --danger:#ff6b62; color-scheme:dark;
   --pin-0:#ff7a63; --pin-1:#4cc79c; --pin-2:#a08bff; --pin-3:#f0a948; --pin-4:#6aa6ff; --pin-5:#f173b3; --pin-6:#93c255; --pin-7:#45c4dc;
 }
 html,body{height:100%}
@@ -156,6 +156,12 @@ body.help-open #helpBtn{display:inline-flex;align-items:center;justify-content:c
 .pchip:hover{background:var(--accent-soft)}
 .pchip .pdot{width:9px;height:9px;border-radius:50%;flex:none}
 .pin-drag, .pin-drag *{cursor:copy!important}
+.pname-edit{font:inherit;font-size:13px;width:12ch;border:1px solid var(--accent);border-radius:4px;padding:0 4px;background:var(--box);color:var(--ink);outline:none}
+#pinMenu{position:fixed;z-index:9;min-width:150px;padding:4px;background:var(--box);border:1px solid var(--edge);border-radius:10px;box-shadow:0 10px 28px -12px rgba(20,30,60,.45);display:flex;flex-direction:column;gap:1px}
+#pinMenu[hidden]{display:none}
+#pinMenu button{border:0;background:transparent;text-align:left;padding:7px 10px;border-radius:6px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer}
+#pinMenu button:hover{background:var(--accent-soft);color:var(--ink)}
+#pinMenu .danger{color:var(--danger)}
 @media (prefers-reduced-motion:reduce){.pin.flash svg{animation:none}}
 /* Selection toolbar: floats just above the selection (below it if there is no room) */
 #selbar{position:fixed;z-index:6;transform:translateX(-50%);gap:2px}
@@ -304,6 +310,10 @@ body.help-open .wl-help{display:none}
   <button id="pinAdd" class="ib" type="button" aria-label="Add a pin" title="Drag onto the board to add a pin"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7 14.5s-4.5-4.4-4.5-7.5a4.5 4.5 0 0 1 9 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="7" r="1.6" fill="currentColor"/><path d="M12 10v5M9.5 12.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
   <span class="isep" id="pinSep" hidden></span>
   <div id="pinChips"></div>
+</div>
+<div id="pinMenu" role="menu" hidden>
+  <button id="pmRename" type="button" role="menuitem">Rename</button>
+  <button id="pmDelete" type="button" role="menuitem" class="danger">Delete pin</button>
 </div>
 <div class="isl" id="selbar" role="toolbar" aria-label="Selection" hidden>
   <span class="sb-lines">
@@ -747,10 +757,11 @@ function renderAll(){
   updateWelcome();
   renderPins();
 }
+const pinSvg = c => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 23s7.5-7.4 7.5-12.5a7.5 7.5 0 1 0-15 0C4.5 15.6 12 23 12 23z" fill="var(--pin-${c})" stroke="var(--box)" stroke-width="1.5"/><circle cx="12" cy="10.5" r="2.8" fill="var(--box)"/></svg>`;
 function renderPins(){
   const L = $('pinLayer'), C = $('pinChips'); if (!L || !C) return;
   const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[ch]);
-  L.innerHTML = pins().map(p => `<div class="pin" data-pin="${p.id}" style="left:${p.x}px;top:${p.y}px" title="${esc(p.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 23s7.5-7.4 7.5-12.5a7.5 7.5 0 1 0-15 0C4.5 15.6 12 23 12 23z" fill="var(--pin-${p.c})" stroke="var(--box)" stroke-width="1.5"/><circle cx="12" cy="10.5" r="2.8" fill="var(--box)"/></svg><span class="pin-name">${esc(p.name)}</span></div>`).join('');
+  L.innerHTML = pins().map(p => `<div class="pin" data-pin="${p.id}" style="left:${p.x}px;top:${p.y}px" title="${esc(p.name)}">${pinSvg(p.c)}<span class="pin-name">${esc(p.name)}</span></div>`).join('');
   C.innerHTML = pins().map(p => `<button class="pchip" type="button" data-pin="${p.id}" title="Jump to ${esc(p.name)}"><span class="pdot" style="background:var(--pin-${p.c})"></span><span class="pname">${esc(p.name)}</span></button>`).join('');
   $('pinSep').hidden = !pins().length;
 }
@@ -762,14 +773,70 @@ function jumpToPin(id){
 }
 // A press on a marker: a click jumps to it (Task 3 adds dragging, Task 2 adds the right-click menu)
 function downPin(e, id){
+  if (e.button === 2){ openPinMenu(id, e.clientX, e.clientY); return; }
   if (e.button !== 0) return;
   if (editing) endEdit();
   const sx = e.clientX, sy = e.clientY; let moved = false;
   gesture = { move(ev){ if (Math.hypot(ev.clientX - sx, ev.clientY - sy) > 4) moved = true; },
     up(){ if (!moved) jumpToPin(id); }, cancel(){} };
 }
-$('pinChips').addEventListener('click', e => { const c = e.target.closest('.pchip'); if (c) jumpToPin(+c.dataset.pin); });
+$('pinChips').addEventListener('click', e => { if (e.target.closest('.pname-edit')) return; const c = e.target.closest('.pchip'); if (c) jumpToPin(+c.dataset.pin); });
+$('pinChips').addEventListener('dblclick', e => { const c = e.target.closest('.pchip'); if (c && !e.target.closest('.pname-edit')) renamePin(+c.dataset.pin); });
 $('pinChips').addEventListener('pointerdown', e => { if (e.target.closest('.pchip')) e.preventDefault(); });
+function nextPinName(){ const used = new Set(pins().map(p => (/^Pin (\d+)$/.exec(p.name) || [])[1]).filter(Boolean).map(Number));
+  let n = 1; while (used.has(n)) n++; return 'Pin ' + n; }
+function nextPinColor(){ const used = new Set(pins().map(p => p.c)); for (let c = 0; c < PIN_COLORS; c++) if (!used.has(c)) return c; return pins().length % PIN_COLORS; }
+function addPin(x, y){ const p = { id: state.nextId++, x, y, name: nextPinName(), c: nextPinColor() }; pins().push(p); renderPins(); commit(); renamePin(p.id); return p.id; }
+function deletePin(id){ const i = pins().findIndex(p => p.id === id); if (i < 0) return; pins().splice(i, 1); renderPins(); commit(); toast('Pin deleted. Undo brings it back.'); }
+// The chip becomes a text field: Enter or blur saves, Esc keeps the name, empty keeps the old name
+function renamePin(id){
+  const p = pin(id), chip = document.querySelector(`.pchip[data-pin="${id}"]`); if (!p || !chip) return;
+  chip.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  const name = chip.querySelector('.pname'), inp = document.createElement('input');
+  inp.className = 'pname-edit'; inp.value = p.name; inp.setAttribute('aria-label', 'Pin name'); inp.maxLength = 40;
+  name.replaceWith(inp); inp.focus(); inp.select();
+  let done = false;
+  const finish = save => { if (done) return; done = true; const v = inp.value.trim();
+    if (save && v && v !== p.name){ p.name = v; renderPins(); commit(); } else renderPins(); };
+  inp.addEventListener('keydown', ev => { ev.stopPropagation(); if (ev.key === 'Enter'){ ev.preventDefault(); finish(true); } else if (ev.key === 'Escape'){ ev.preventDefault(); finish(false); } });
+  inp.addEventListener('blur', () => finish(true));
+  inp.addEventListener('pointerdown', ev => ev.stopPropagation());
+}
+const addPinAtCentre = () => { const v = visibleRect(); addPin(Math.round(v.x + v.w/2), Math.round(v.y + v.h/2)); };
+$('pinAdd').addEventListener('pointerdown', e => {
+  if (e.button !== 0) return; e.preventDefault();
+  const sx = e.clientX, sy = e.clientY; let moved = false, ghost = null;
+  const overBoard = ev => { const el = document.elementFromPoint(ev.clientX, ev.clientY); return el && el.closest('#viewport') && !el.closest('.isl, #menu, #help, #helpBtn, #selbar, #pinMenu'); };
+  gesture = {
+    move(ev){
+      if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 4) return;
+      if (!moved){ moved = true; document.body.classList.add('pin-drag');
+        ghost = document.createElement('div'); ghost.className = 'pin ghost'; ghost.innerHTML = pinSvg(nextPinColor());
+        $('pinLayer').appendChild(ghost); }
+      const p = pinAt(ev); ghost.style.left = p.x + 'px'; ghost.style.top = p.y + 'px';
+      ghost.style.visibility = overBoard(ev) ? 'visible' : 'hidden';
+    },
+    up(ev){ document.body.classList.remove('pin-drag'); if (ghost) ghost.remove();
+      if (!moved){ addPinAtCentre(); return; }
+      if (overBoard(ev)){ const p = pinAt(ev); addPin(p.x, p.y); } },
+    cancel(){ document.body.classList.remove('pin-drag'); if (ghost) ghost.remove(); }
+  };
+});
+// Enter or Space on the focused button fires a click with no pointer press
+$('pinAdd').addEventListener('click', e => { if (e.detail === 0) addPinAtCentre(); });
+let pinMenuId = null;
+function openPinMenu(id, cx, cy){
+  pinMenuId = id; const m = $('pinMenu'); m.hidden = false;
+  const w = m.offsetWidth, h = m.offsetHeight;
+  m.style.left = Math.max(8, Math.min(cx, innerWidth - w - 8)) + 'px'; m.style.top = Math.max(8, Math.min(cy, innerHeight - h - 8)) + 'px';
+}
+function closePinMenu(){ $('pinMenu').hidden = true; pinMenuId = null; }
+$('pinMenu').addEventListener('pointerdown', e => e.preventDefault());
+$('pmRename').onclick = () => { const id = pinMenuId; closePinMenu(); renamePin(id); };
+$('pmDelete').onclick = () => { const id = pinMenuId; closePinMenu(); deletePin(id); };
+document.addEventListener('pointerdown', e => { if (!$('pinMenu').hidden && !e.target.closest('#pinMenu')) closePinMenu(); }, true);
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pinMenu').hidden){ e.stopPropagation(); closePinMenu(); } }, true);
+$('islPins').addEventListener('contextmenu', e => { const c = e.target.closest('.pchip'); e.preventDefault(); if (c) openPinMenu(+c.dataset.pin, e.clientX, e.clientY); });
 // The welcome shows whenever the board has no boxes
 function updateWelcome(){ const w = $('welcome'); if (w) w.hidden = !!(state && state.boxes.length); }
 function renderLinks(extra){
@@ -1402,6 +1469,7 @@ function downHandle(e, id, k, exact = true, linkId = null){
 
 /* ---------- keyboard & buttons ---------- */
 window.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('.pname-edit')) return;
   const mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase();
   // Undo/redo work everywhere, including while typing in a box
   if (mod && k === 'z'){ e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
