@@ -150,6 +150,8 @@ body.help-open #helpBtn{display:inline-flex;align-items:center;justify-content:c
 .pin.flash svg{animation:pinflash .7s ease-out}
 @keyframes pinflash{0%{transform:scale(1.6)}100%{transform:scale(1)}}
 #islPins{bottom:calc(12px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);max-width:min(560px,calc(100% - 2*440px));min-width:0}
+#pinAdd{touch-action:none}
+#pinChips{touch-action:pan-x}
 #pinChips{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;min-width:0}
 #pinChips::-webkit-scrollbar{display:none}
 .pchip{display:inline-flex;align-items:center;gap:6px;flex:none;border:0;background:transparent;padding:5px 9px;border-radius:7px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer;white-space:nowrap}
@@ -787,17 +789,20 @@ function nextPinName(){ const used = new Set(pins().map(p => (/^Pin (\d+)$/.exec
   let n = 1; while (used.has(n)) n++; return 'Pin ' + n; }
 function nextPinColor(){ const used = new Set(pins().map(p => p.c)); for (let c = 0; c < PIN_COLORS; c++) if (!used.has(c)) return c; return pins().length % PIN_COLORS; }
 function addPin(x, y){ const p = { id: state.nextId++, x, y, name: nextPinName(), c: nextPinColor() }; pins().push(p); renderPins(); commit(); renamePin(p.id); return p.id; }
-function deletePin(id){ const i = pins().findIndex(p => p.id === id); if (i < 0) return; pins().splice(i, 1); renderPins(); commit(); toast('Pin deleted. Undo brings it back.'); }
+function deletePin(id){ if (finishRename) finishRename(false); const i = pins().findIndex(p => p.id === id); if (i < 0) return; pins().splice(i, 1); renderPins(); commit(); toast('Pin deleted. Undo brings it back.'); }
 // The chip becomes a text field: Enter or blur saves, Esc keeps the name, empty keeps the old name
+let finishRename = null; // ends the rename in progress, if any: finishRename(save)
 function renamePin(id){
+  if (finishRename) finishRename(true);
   const p = pin(id), chip = document.querySelector(`.pchip[data-pin="${id}"]`); if (!p || !chip) return;
   chip.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   const name = chip.querySelector('.pname'), inp = document.createElement('input');
   inp.className = 'pname-edit'; inp.value = p.name; inp.setAttribute('aria-label', 'Pin name'); inp.maxLength = 40;
   name.replaceWith(inp); inp.focus(); inp.select();
   let done = false;
-  const finish = save => { if (done) return; done = true; const v = inp.value.trim();
-    if (save && v && v !== p.name){ p.name = v; renderPins(); commit(); } else renderPins(); };
+  const finish = save => { if (done) return; done = true; if (finishRename === finish) finishRename = null; const v = inp.value.trim();
+    if (save && v && v !== p.name && pin(id) === p){ p.name = v; renderPins(); commit(); } else renderPins(); };
+  finishRename = finish;
   inp.addEventListener('keydown', ev => { ev.stopPropagation(); if (ev.key === 'Enter'){ ev.preventDefault(); finish(true); } else if (ev.key === 'Escape'){ ev.preventDefault(); finish(false); } });
   inp.addEventListener('blur', () => finish(true));
   inp.addEventListener('pointerdown', ev => ev.stopPropagation());
@@ -830,6 +835,8 @@ function openPinMenu(id, cx, cy){
   const w = m.offsetWidth, h = m.offsetHeight;
   m.style.left = Math.max(8, Math.min(cx, innerWidth - w - 8)) + 'px'; m.style.top = Math.max(8, Math.min(cy, innerHeight - h - 8)) + 'px';
 }
+window.addEventListener('resize', () => closePinMenu());
+viewport.addEventListener('wheel', () => closePinMenu(), { passive: true });
 function closePinMenu(){ $('pinMenu').hidden = true; pinMenuId = null; }
 $('pinMenu').addEventListener('pointerdown', e => e.preventDefault());
 $('pmRename').onclick = () => { const id = pinMenuId; closePinMenu(); renamePin(id); };
@@ -1059,6 +1066,7 @@ function diff(a, b){
   return { rect: bounds(rects), ids };
 }
 function restore(i){
+  if (finishRename) finishRename(false); // an unfinished pin rename is dropped, not saved onto the old state
   const wasEditing = editing;
   if (editing){ const b = box(editing), el = els.get(editing); if (b && el) el.firstChild.contentEditable = 'false'; editing = null; getSelection().removeAllRanges(); }
   const before = JSON.parse(history[hIdx]);
