@@ -6,7 +6,7 @@
 <title>Explainer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Caveat:wght@500&display=swap">
 <style>
 /* base reset (the artifact host normally provides this) */
 *,*::before,*::after{box-sizing:border-box}
@@ -18,6 +18,7 @@ body{margin:0;font-size:14px}
   --accent:#2c56e0; --accent-soft:rgba(44,86,224,.14); --muted:#667085; --chrome:rgba(255,255,255,.86);
   --edge:#d7dce6;
   --f-display:"Bricolage Grotesque", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --f-hand:"Caveat", "Bradley Hand", cursive;
   --f-text:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -172,10 +173,47 @@ body.gesturing #selbar{display:none}
   #islTL .example{display:none}
   #islTC .lbl-txt{display:none}
 }
+/* Welcome on an empty board: it lets presses through to the board, except on its items */
+#welcome{position:fixed;inset:0;z-index:1;pointer-events:none;color:var(--muted)}
+#welcome[hidden]{display:none}
+.wl-center{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;width:min(360px,calc(100% - 32px));text-align:center}
+.wl-logo{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:700;font-size:34px;letter-spacing:-.02em;color:var(--ink)}
+.wl-logo svg{width:36px;height:36px}
+.wl-tag{margin:0 0 6px;font-family:var(--f-hand);font-size:24px;color:var(--muted)}
+.wl-hints{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px;align-self:stretch}
+.wl-hints li{display:flex;align-items:center;gap:10px}
+.wl-hints svg{width:16px;height:16px;flex:none}
+.wl-hints kbd{font-family:var(--f-text);font-size:11.5px;border:1px solid var(--edge);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--box);color:var(--ink)}
+.wl-items{align-self:stretch;display:flex;flex-direction:column;border-top:1px solid var(--edge);margin-top:6px;padding-top:6px}
+.wl-items button,.wl-items a{pointer-events:auto;border:0;background:transparent;text-align:left;padding:7px 8px;border-radius:6px;font:inherit;font-size:14px;color:var(--ink);text-decoration:none;cursor:pointer}
+.wl-items button:hover,.wl-items a:hover{background:var(--accent-soft);color:var(--ink)}
+.wl-note{position:absolute;font-family:var(--f-hand);font-size:20px;line-height:1.1;display:flex;align-items:flex-end;gap:4px;color:var(--muted)}
+.wl-note svg{width:52px;height:44px;flex:none}
+.wl-menu{top:calc(66px + env(safe-area-inset-top,0px));left:22px;flex-direction:row-reverse}
+.wl-help{bottom:calc(64px + env(safe-area-inset-bottom,0px));right:58px}
+@media (max-width:860px){.wl-note{display:none}}
 @media (prefers-reduced-motion:reduce){.h,#toast{transition:none}.box.flash{animation:none}}
 </style>
 </head>
 <body>
+
+<div id="welcome" hidden>
+  <div class="wl-center">
+    <div class="wl-logo"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2" y="3" width="8" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="14" width="8" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><path d="M10 6.5h4.5a2 2 0 0 1 2 2V11" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/><path d="M14 10.5l2.5 2.5 2.5-2.5" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Explainer</div>
+    <p class="wl-tag">Boxes, lines, and nothing in the way.</p>
+    <ul class="wl-hints">
+      <li><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 6v4M6 8h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Double-click anywhere to add a box</li>
+      <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9.5 4.5L13 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Select a box, <kbd class="wl-mod">⌘</kbd>-click another to connect</span></li>
+    </ul>
+    <div class="wl-items">
+      <button id="wlExample" type="button">Open the example board</button>
+      <button id="wlHelp" type="button">Shortcuts</button>
+      <a id="wlGit" href="https://github.com/andidev/explainer" target="_blank" rel="noopener">Source on GitHub</a>
+    </div>
+  </div>
+  <div class="wl-note wl-menu">theme, capitals, grid…<svg viewBox="0 0 60 50" aria-hidden="true"><path d="M52 44 C 30 44 14 34 10 8 M4 15 L10 6 L16 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div class="wl-note wl-help">shortcuts and help<svg viewBox="0 0 60 50" aria-hidden="true"><path d="M6 8 C 34 8 50 18 52 42 M45 36 L52 45 L58 36" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div>
 
 <div class="isl" id="islTL">
   <button id="menuBtn" class="ib" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Menu" title="Menu"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M2.5 8h11M2.5 12h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
@@ -661,7 +699,10 @@ function renderAll(){
   for (const b of state.boxes){ const el = makeEl(b); place(el, b); layer.appendChild(el); els.set(b.id, el); }
   renderSel();
   $('exampleTag').hidden = !state.example;
+  updateWelcome();
 }
+// The welcome shows whenever the board has no boxes
+function updateWelcome(){ const w = $('welcome'); if (w) w.hidden = !!(state && state.boxes.length); }
 function renderLinks(extra){
   let s = ''; const pts = extra ? extra.slice() : [];
   for (const l of state.links){
@@ -1146,7 +1187,7 @@ function downCanvas(e){
       if (!r || r.w*view.z < 14 || r.h*view.z < 14) return;
       const b = { id: state.nextId++, x:sn(r.x), y:sn(r.y), w:Math.max(snap ? 3*G : 60, sn(r.w)), h:Math.max(snap ? 2*G : 44, sn(r.h)), text:'' };
       rememberCreated(b);
-      state.boxes.push(b);
+      state.boxes.push(b); updateWelcome();
       const el = makeEl(b); place(el, b); layer.appendChild(el); els.set(b.id, el);
       commit(); startEdit(b);
     },
@@ -1213,7 +1254,7 @@ function newBoxAt(p, size){
   const { w, h } = size || defaultSize();
   const b = { id: state.nextId++, x: sn(p.x - w/2), y: sn(p.y - h/2), w, h, text:'' };
   rememberCreated(b);
-  state.boxes.push(b);
+  state.boxes.push(b); updateWelcome();
   const el = makeEl(b); place(el, b); layer.appendChild(el); els.set(b.id, el);
   commit(); startEdit(b);
 }
@@ -1328,7 +1369,7 @@ function deleteSel(){
   const nb = sel.boxes.size, nl = sel.links.size;
   state.boxes = state.boxes.filter(b => !sel.boxes.has(b.id));
   state.links = state.links.filter(l => !sel.links.has(l.id) && !sel.boxes.has(l.from) && !sel.boxes.has(l.to));
-  setSel(); armed = null; renderAll(); commit();
+  setSel(); armed = null; renderAll(); updateWelcome(); commit();
   if (nb + nl > 1) toast(`Deleted ${nb ? nb + (nb > 1 ? ' boxes' : ' box') : ''}${nb && nl ? ' and ' : ''}${nl ? nl + (nl > 1 ? ' lines' : ' line') : ''}. Undo brings them back.`);
 }
 /* ---------- copy, cut, paste ---------- */
@@ -1462,6 +1503,10 @@ let tt; function toast(m){ toastEl.textContent = m; toastEl.classList.add('on');
 // Help box: open by default on large screens (remembered), a "?" button on small ones
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 document.querySelectorAll('#help .mod').forEach(k => k.textContent = isMac ? '⌘' : 'Ctrl');
+document.querySelectorAll('#welcome .wl-mod').forEach(k => k.textContent = isMac ? '⌘' : 'Ctrl');
+['wlExample','wlHelp'].forEach(id => $(id).addEventListener('pointerdown', e => e.stopPropagation()));
+$('wlExample').onclick = loadExample;
+$('wlHelp').onclick = () => setHelp(true);
 document.querySelectorAll('#help .both').forEach(k => k.textContent = isMac ? 'Ctrl' : 'Alt'); // see heads()
 const small = () => matchMedia('(max-width: 760px)').matches;
 let helpPref = null; try { helpPref = localStorage.getItem('explainer.help'); } catch(e){}
@@ -1476,7 +1521,7 @@ function setPin(on){ helpPinned = on; $('helpPin').setAttribute('aria-pressed', 
 $('helpPin').onclick = () => setPin(!helpPinned);
 setPin(helpPinned);
 document.addEventListener('pointerdown', e => {
-  if (!helpPinned && document.body.classList.contains('help-open') && !e.target.closest('#help, #helpBtn, #mHelp')) setHelp(false);
+  if (!helpPinned && document.body.classList.contains('help-open') && !e.target.closest('#help, #helpBtn, #mHelp, #wlHelp')) setHelp(false);
 }, true);
 $('helpBtn').onclick = () => setHelp(true);
 
