@@ -522,3 +522,12 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Why: User asked that selected items can be copied and pasted.
 - Code: `copySel`, `pasteClip`, `readClip`, `keyCopy`, document `copy`/`cut`/`paste` listeners,
   clipboard type `application/x-explainer+json`; shortcuts panel; README.
+
+### D-055: GitHub link in the top-right corner
+- Status: Active
+- Date: 2026-10-13
+- Decision: The header's top-right corner shows the GitHub mark, linking to
+  https://github.com/andidev/explainer in a new tab. It stays in that corner at every width; the
+  header keeps room for it so the tools never run underneath.
+- Why: User asked for a GitHub link in the top right corner.
+- Code: `.gh` link in `header`, header right padding.
