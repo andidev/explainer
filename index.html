@@ -150,14 +150,16 @@ body.help-open #helpBtn{display:inline-flex;align-items:center;justify-content:c
 #menu hr{border:0;border-top:1px solid var(--edge);margin:4px 2px;width:auto}
 .mrow{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border:0;background:transparent;padding:7px 10px;border-radius:6px;
   font:inherit;font-size:13px;color:var(--ink);text-decoration:none;text-align:left;cursor:pointer}
-.mrow:hover{background:var(--accent-soft);color:var(--ink)}
+#menu .mrow:hover{background:var(--accent-soft);color:var(--ink)}
 .mr-v{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px}
 .mr-v svg{width:14px;height:14px}
 .phone-only{display:none!important}
+@media (max-width:860px){
+  #islTC{top:calc(62px + env(safe-area-inset-top,0px))}
+}
 @media (max-width:640px){
   .phone-only{display:flex!important} hr.phone-only{display:block!important}
   .no-phone{display:none!important}
-  #islTC{top:calc(62px + env(safe-area-inset-top,0px))}
   #islTL .example{display:none}
 }
 @media (prefers-reduced-motion:reduce){.h,#toast{transition:none}.box.flash{animation:none}}
@@ -1371,7 +1373,7 @@ document.querySelectorAll('#help .both').forEach(k => k.textContent = isMac ? 'C
 const small = () => matchMedia('(max-width: 760px)').matches;
 let helpPref = null; try { helpPref = localStorage.getItem('explainer.help'); } catch(e){}
 // Remembered at every screen size; on a first visit it starts open (except on phone-width screens)
-document.body.classList.toggle('help-open', helpPref ? helpPref === 'open' : !matchMedia('(max-width: 480px)').matches);
+document.body.classList.toggle('help-open', helpPref ? helpPref === 'open' : !matchMedia('(max-width: 640px)').matches);
 function setHelp(open){ document.body.classList.toggle('help-open', open); try { localStorage.setItem('explainer.help', open ? 'open' : 'closed'); } catch(e){} settingChanged(); }
 $('helpMin').onclick = () => setHelp(false);
 // Unpinned (the default), the panel hides as soon as you click or start working anywhere else
