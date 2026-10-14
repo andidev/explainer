@@ -706,7 +706,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `body.caps .pin-name, .pname, .pname-edit`; `renamePin` (`beforeinput`, `capAttr`, `autoCapOn`).
 
 ### D-067: Jumping to a pin shows the boxes around it
-- Status: Active
+- Status: Amended by D-069
 - Date: 2026-10-13
 - Amends: D-063 (replaces "centre, keep zoom")
 - Decision: Clicking a pin (chip or marker) fits the view to the pin and the group of boxes around
@@ -729,3 +729,14 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   unchanged.
 - Why: User asked for this wording, so each box teaches one step.
 - Code: `sample`.
+
+### D-069: Pin groups reach two box-widths
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-067
+- Decision: Boxes count as one group (and as near a pin) when the gap between their edges is at
+  most 308 board pixels: 14 grid cells, the width of two default boxes. It was 154 (one box width).
+  Boxes joined by a line still count as one group at any distance.
+- Why: User showed two related boxes about 9 grid cells (~200px) apart that were left out of the
+  pin's group; one box-width was too tight for how people space their diagrams.
+- Code: `NEAR`.

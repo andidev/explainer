@@ -786,9 +786,10 @@ function markSelPin(){
 }
 // Clicking a pin selects it (clearing any box or line selection) so Backspace/Delete can remove it
 function selectPin(id){ if (!pin(id)) return; if (editing) endEdit(); setSel(); selPin = id; armed = null; renderSel(); }
-// Boxes closer than this (edge to edge, in board pixels) count as one group: 7 grid cells, the width
-// of a default box. More empty space than a whole box usually means a different part of the diagram.
-const NEAR = 7*22;
+// Boxes closer than this (edge to edge, in board pixels) count as one group: 14 grid cells, the width
+// of two default boxes. Diagrams often leave a box-width or more of air between related boxes; more
+// than two box-widths of empty space usually means a different part of the diagram.
+const NEAR = 14*22;
 const gapTo = (b, x0, y0, x1, y1) => Math.hypot(Math.max(0, b.x - x1, x0 - (b.x + b.w)), Math.max(0, b.y - y1, y0 - (b.y + b.h)));
 // The boxes around a pin: every group (boxes joined by a line, or chained within NEAR of each other)
 // that has a box within NEAR of the pin. Returns their bounds together with the pin, or null.
