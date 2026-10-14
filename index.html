@@ -413,8 +413,8 @@ function sample(){
   // The three things to know, as a tiny diagram (isMac is defined later, so test the platform here)
   const mod = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl';
   return { nextId: 4, example: true, boxes: [
-    { id:1, x:66,  y:88, w:242, h:110, text:'Drag or double-click to create a box, then type' },
-    { id:2, x:396, y:88, w:242, h:110, text:'Drag or double-click to create another box' },
+    { id:1, x:66,  y:88, w:242, h:110, text:'Drag or double-click to create a box' },
+    { id:2, x:396, y:88, w:242, h:110, text:'Type to enter text' },
     { id:3, x:726, y:88, w:264, h:110, text:`Connect boxes: select one, hold ${mod} and click the other` },
   ], links: [
     { id:1, from:1, fa:'e', to:2, ta:'w', arrow:true },

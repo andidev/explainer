@@ -496,7 +496,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   panel (`.both` key label); README.
 
 ### D-053: The example board shows just the three essentials
-- Status: Active
+- Status: Amended by D-068
 - Date: 2026-10-13
 - Amends: D-015
 - Decision: The example board a first-time visitor sees is three boxes in a row joined by arrows:
@@ -719,3 +719,13 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   connected boxes counted as one group, and left the distance to us: one default box width of
   empty space is the usual sign of a separate part of the diagram.
 - Code: `NEAR`, `gapTo`, `pinArea`, `jumpToPin`.
+
+### D-068: Example board steps reworded
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-053
+- Decision: The example board's first box reads "Drag or double-click to create a box" and the
+  second reads "Type to enter text". The third box, the arrows between them and the layout are
+  unchanged.
+- Why: User asked for this wording, so each box teaches one step.
+- Code: `sample`.
