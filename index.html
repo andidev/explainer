@@ -380,7 +380,7 @@ body.help-open .wl-help{display:none}
     <dt><kbd>⇧</kbd> <kbd class="mod">Ctrl</kbd> <kbd>Z</kbd></dt><dd>Redo</dd>
     <dt>Hover a line, drag</dt><dd>New line from its end</dd>
     <dt>Drag or click 📍</dt><dd>Add a pin</dd>
-    <dt>Click a pin</dt><dd>Jump there and select it</dd>
+    <dt>Click a pin</dt><dd>Show it and the boxes near it</dd>
     <dt>Drag a pin chip onto the board</dt><dd>Move the pin</dd>
     <dt>Right-click or long-press a pin</dt><dd>Rename or delete</dd>
     <dt><kbd>Alt</kbd> <kbd>←</kbd> / <kbd>→</kbd></dt><dd>Jump between edits</dd>
@@ -786,9 +786,31 @@ function markSelPin(){
 }
 // Clicking a pin selects it (clearing any box or line selection) so Backspace/Delete can remove it
 function selectPin(id){ if (!pin(id)) return; if (editing) endEdit(); setSel(); selPin = id; armed = null; renderSel(); }
+// Boxes closer than this (edge to edge, in board pixels) count as one group: 7 grid cells, the width
+// of a default box. More empty space than a whole box usually means a different part of the diagram.
+const NEAR = 7*22;
+const gapTo = (b, x0, y0, x1, y1) => Math.hypot(Math.max(0, b.x - x1, x0 - (b.x + b.w)), Math.max(0, b.y - y1, y0 - (b.y + b.h)));
+// The boxes around a pin: every group (boxes joined by a line, or chained within NEAR of each other)
+// that has a box within NEAR of the pin. Returns their bounds together with the pin, or null.
+function pinArea(p){
+  const bs = state.boxes; if (!bs.length) return null;
+  const idx = new Map(bs.map((b, i) => [b.id, i])), up = bs.map((_, i) => i);
+  const root = i => { while (up[i] !== i){ up[i] = up[up[i]]; i = up[i]; } return i; };
+  const join = (i, j) => { up[root(i)] = root(j); };
+  for (const l of state.links){ const i = idx.get(l.from), j = idx.get(l.to); if (i != null && j != null) join(i, j); }
+  for (let i = 0; i < bs.length; i++) for (let j = i + 1; j < bs.length; j++){
+    const a = bs[i]; if (gapTo(bs[j], a.x, a.y, a.x + a.w, a.y + a.h) <= NEAR) join(i, j); }
+  const near = new Set(bs.filter(b => gapTo(b, p.x, p.y, p.x, p.y) <= NEAR).map(b => root(idx.get(b.id))));
+  if (!near.size) return null;
+  return bounds([...bs.filter((b, i) => near.has(root(i))), { x: p.x - 20, y: p.y - 30, w: 40, h: 34 }]);
+}
+// Jump to a pin: fit the boxes around it (zooming out as needed, never past 100%), or just centre it
 function jumpToPin(id){
   const p = pin(id); if (!p) return;
-  animateView({ z: view.z, x: viewport.clientWidth/2 - p.x*view.z, y: viewport.clientHeight/2 - p.y*view.z });
+  const r = pinArea(p);
+  if (r){ const z = Math.max(0.2, Math.min(1, viewport.clientWidth/(r.w + 120), viewport.clientHeight/(r.h + 200)));
+    animateView({ z, x: viewport.clientWidth/2 - (r.x + r.w/2)*z, y: viewport.clientHeight/2 - (r.y + r.h/2)*z }); }
+  else animateView({ z: view.z, x: viewport.clientWidth/2 - p.x*view.z, y: viewport.clientHeight/2 - p.y*view.z });
   const m = document.querySelector(`.pin[data-pin="${id}"]`);
   if (m){ m.classList.remove('flash'); void m.offsetWidth; m.classList.add('flash'); }
 }

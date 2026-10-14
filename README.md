@@ -58,7 +58,7 @@ is still there. Use **Share** to copy a link to the whole board or to only the i
 Your settings, including light or dark mode, travel with the link.
 
 **Pins.** Drag the 📍 at the bottom onto the board to drop a pin, or click it to add one in the middle
-of the view. Each pin gets a name and a colour; click its name to jump back, or drag it to move it.
+of the view. Each pin gets a name and a colour; click its name to jump back and see the boxes around it, or drag it to move it.
 Right-click a pin (long-press on touch) to rename or delete it, or click it and press Backspace. Pins travel with the link too.
 
 ## Shortcuts
@@ -77,7 +77,7 @@ Right-click a pin (long-press on touch) to rename or delete it, or click it and 
 | Plain line / arrows both ways | Hold Shift / Shift+Ctrl while dropping a line |
 | Change a selected line (style, arrowheads, reverse) | Use the toolbar above it |
 | Add a pin | Drag or click 📍 |
-| Jump to a pin (and select it) | Click it |
+| Jump to a pin, showing the boxes near it (and select it) | Click it |
 | Delete the selected pin | Backspace or Delete |
 | Move a pin | Drag its chip onto the board |
 | Rename or delete a pin | Right-click it, or long-press on touch |

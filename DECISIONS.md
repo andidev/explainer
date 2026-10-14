@@ -634,7 +634,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `newHeads`, `setNewHeads`, `headsFrom`, `explainer.newheads`, `currentSettings`/`applySettings`.
 
 ### D-063: Pins: named places to jump to
-- Status: Amended by D-064, D-065, D-066
+- Status: Amended by D-064, D-065, D-066, D-067
 - Date: 2026-10-13
 - Amends: D-057
 - Decision: A pin is a named, coloured place on the board that you can jump back to.
@@ -704,3 +704,18 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   sets `autocapitalize` for on-screen keyboards.
 - Why: User asked that pins follow the capitalisation setting.
 - Code: `body.caps .pin-name, .pname, .pname-edit`; `renamePin` (`beforeinput`, `capAttr`, `autoCapOn`).
+
+### D-067: Jumping to a pin shows the boxes around it
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-063 (replaces "centre, keep zoom")
+- Decision: Clicking a pin (chip or marker) fits the view to the pin and the group of boxes around
+  it, zooming out as needed but never in past 100%. Boxes form a group when they are joined by a
+  line (at any distance) or when the gap between their edges is at most 154 board pixels (7 grid
+  cells, the width of a default box); groups chain, so near-to-near counts. Every group with a box
+  within the same 154px of the pin is shown. A pin with no box that close is centred at the
+  current zoom, as before.
+- Why: User asked that a selected pin zoom out to show the nearby boxes grouped by proximity, with
+  connected boxes counted as one group, and left the distance to us: one default box width of
+  empty space is the usual sign of a separate part of the diagram.
+- Code: `NEAR`, `gapTo`, `pinArea`, `jumpToPin`.
