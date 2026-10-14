@@ -634,7 +634,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `newHeads`, `setNewHeads`, `headsFrom`, `explainer.newheads`, `currentSettings`/`applySettings`.
 
 ### D-063: Pins: named places to jump to
-- Status: Amended by D-064
+- Status: Amended by D-064, D-065
 - Date: 2026-10-13
 - Amends: D-057
 - Decision: A pin is a named, coloured place on the board that you can jump back to.
@@ -680,3 +680,15 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Why: User asked for a 10px long-press threshold; fingers wobble, and 4px often turned a long-press
   into an accidental drag.
 - Code: `pressSlop`, `downPin`, `#pinChips` `pointerdown`.
+
+### D-065: Select a pin and delete it with Backspace
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-063, D-014
+- Decision: Clicking a pin's chip or marker jumps to it and also selects it: its chip gets an
+  accent ring and its marker's name label turns accent. A newly added pin starts selected.
+  Backspace or Delete removes the selected pin (one undo step, with the "Pin deleted" toast).
+  Selecting a pin ends any text editing and clears the box and line selection; selecting a box or
+  line, clicking empty board, undo/redo or Esc clears the pin selection.
+- Why: User asked to delete the selected pin with Backspace.
+- Code: `selPin`, `selectPin`, `markSelPin`, `setSel`, keydown handler, `.pin.sel`, `.pchip.sel`.

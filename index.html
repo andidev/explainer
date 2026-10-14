@@ -147,6 +147,8 @@ body.help-open #helpBtn{display:inline-flex;align-items:center;justify-content:c
 .pin svg{position:absolute;left:-12px;top:-23px;width:24px;height:24px;filter:drop-shadow(0 1px 1px rgba(20,30,60,.35))}
 .pin .pin-name{position:absolute;left:11px;top:-24px;white-space:nowrap;font-size:12px;font-weight:700;color:var(--ink);background:var(--chrome);border-radius:5px;padding:1px 6px}
 .pin.ghost{opacity:.35}
+.pin.sel svg{filter:drop-shadow(0 0 1.5px var(--accent)) drop-shadow(0 0 1.5px var(--accent))}
+.pin.sel .pin-name{background:var(--accent);color:var(--box)}
 .pin.flash svg{animation:pinflash .7s ease-out}
 @keyframes pinflash{0%{transform:scale(1.6)}100%{transform:scale(1)}}
 #islPins{bottom:calc(12px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);max-width:min(560px,calc(100% - 2*440px));min-width:0}
@@ -156,6 +158,7 @@ body.help-open #helpBtn{display:inline-flex;align-items:center;justify-content:c
 #pinChips::-webkit-scrollbar{display:none}
 .pchip{display:inline-flex;align-items:center;gap:6px;flex:none;border:0;background:transparent;padding:5px 9px;border-radius:7px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer;white-space:nowrap}
 .pchip:hover{background:var(--accent-soft)}
+.pchip.sel{background:var(--accent-soft);box-shadow:inset 0 0 0 1.5px var(--accent)}
 .pchip .pdot{width:9px;height:9px;border-radius:50%;flex:none}
 .pin-drag, .pin-drag *{cursor:copy!important}
 .pname-edit{font:inherit;font-size:13px;width:12ch;border:1px solid var(--accent);border-radius:4px;padding:0 4px;background:var(--box);color:var(--ink);outline:none}
@@ -377,7 +380,7 @@ body.help-open .wl-help{display:none}
     <dt><kbd>⇧</kbd> <kbd class="mod">Ctrl</kbd> <kbd>Z</kbd></dt><dd>Redo</dd>
     <dt>Hover a line, drag</dt><dd>New line from its end</dd>
     <dt>Drag or click 📍</dt><dd>Add a pin</dd>
-    <dt>Click a pin</dt><dd>Jump there</dd>
+    <dt>Click a pin</dt><dd>Jump there and select it</dd>
     <dt>Drag a pin chip onto the board</dt><dd>Move the pin</dd>
     <dt>Right-click or long-press a pin</dt><dd>Rename or delete</dd>
     <dt><kbd>Alt</kbd> <kbd>←</kbd> / <kbd>→</kbd></dt><dd>Jump between edits</dd>
@@ -502,7 +505,8 @@ const box = id => state.boxes.find(b => b.id === id);
 const PIN_COLORS = 8;
 const pins = () => (state.pins || (state.pins = []));
 const pin = id => pins().find(p => p.id === id);
-function setSel(b = [], l = []){ sel = { boxes:new Set(b), links:new Set(l) }; }
+let selPin = null; // the pin last clicked; Backspace/Delete removes it
+function setSel(b = [], l = []){ sel = { boxes:new Set(b), links:new Set(l) }; selPin = null; }
 const hasSel = () => sel.boxes.size + sel.links.size > 0;
 const onlyBox = () => sel.boxes.size === 1 && !sel.links.size ? [...sel.boxes][0] : null;
 const anchorPt = (b, k) => ({ x: b.x + A[k][0]*b.w, y: b.y + A[k][1]*b.h });
@@ -774,7 +778,14 @@ function renderPins(){
   L.innerHTML = pins().map(p => `<div class="pin" data-pin="${p.id}" style="left:${p.x}px;top:${p.y}px" title="${esc(p.name)}">${pinSvg(p.c)}<span class="pin-name">${esc(p.name)}</span></div>`).join('');
   C.innerHTML = pins().map(p => `<button class="pchip" type="button" data-pin="${p.id}" title="Jump to ${esc(p.name)}"><span class="pdot" style="background:var(--pin-${p.c})"></span><span class="pname">${esc(p.name)}</span></button>`).join('');
   $('pinSep').hidden = !pins().length;
+  markSelPin();
 }
+function markSelPin(){
+  document.querySelectorAll('.pin.sel, .pchip.sel').forEach(el => el.classList.remove('sel'));
+  if (selPin != null) document.querySelectorAll(`.pin[data-pin="${selPin}"], .pchip[data-pin="${selPin}"]`).forEach(el => el.classList.add('sel'));
+}
+// Clicking a pin selects it (clearing any box or line selection) so Backspace/Delete can remove it
+function selectPin(id){ if (!pin(id)) return; if (editing) endEdit(); setSel(); selPin = id; armed = null; renderSel(); }
 function jumpToPin(id){
   const p = pin(id); if (!p) return;
   animateView({ z: view.z, x: viewport.clientWidth/2 - p.x*view.z, y: viewport.clientHeight/2 - p.y*view.z });
@@ -796,14 +807,14 @@ function downPin(e, id){
   gesture = { active:false,
     move(ev){ if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < slop) return; moved = true; lpStop(); if (longPressed) return; this.active = true;
       const q = pinAt(ev), m = el(); if (m){ m.style.left = (ox + q.x - start.x) + 'px'; m.style.top = (oy + q.y - start.y) + 'px'; } },
-    up(ev){ lpStop(); if (longPressed) return; if (!moved){ jumpToPin(id); return; } const q = pinAt(ev); movePin(id, ox + q.x - start.x, oy + q.y - start.y); },
+    up(ev){ lpStop(); if (longPressed) return; if (!moved){ selectPin(id); jumpToPin(id); return; } const q = pinAt(ev); movePin(id, ox + q.x - start.x, oy + q.y - start.y); },
     cancel(){ lpStop(); renderPins(); } };
 }
 const LONG_PRESS_MS = 500; // touch and pen: Safari sends no contextmenu on a long press
 // How far a press may drift before it counts as a drag: fingers wobble more than a mouse
 const pressSlop = e => e.pointerType === 'mouse' ? 4 : 10;
 let pinDragJustEnded = 0; // a chip drag must not also count as a click that jumps
-$('pinChips').addEventListener('click', e => { if (e.target.closest('.pname-edit') || performance.now() - pinDragJustEnded < 300) return; const c = e.target.closest('.pchip'); if (c) jumpToPin(+c.dataset.pin); });
+$('pinChips').addEventListener('click', e => { if (e.target.closest('.pname-edit') || performance.now() - pinDragJustEnded < 300) return; const c = e.target.closest('.pchip'); if (c){ selectPin(+c.dataset.pin); jumpToPin(+c.dataset.pin); } });
 $('pinChips').addEventListener('dblclick', e => { const c = e.target.closest('.pchip'); if (c && !e.target.closest('.pname-edit')) renamePin(+c.dataset.pin); });
 $('pinChips').addEventListener('pointerdown', e => {
   const c = e.target.closest('.pchip'); if (!c || e.button !== 0 || e.target.closest('.pname-edit')) return;
@@ -834,8 +845,8 @@ $('pinChips').addEventListener('pointerdown', e => {
 function nextPinName(){ const used = new Set(pins().map(p => (/^Pin (\d+)$/.exec(p.name) || [])[1]).filter(Boolean).map(Number));
   let n = 1; while (used.has(n)) n++; return 'Pin ' + n; }
 function nextPinColor(){ const used = new Set(pins().map(p => p.c)); for (let c = 0; c < PIN_COLORS; c++) if (!used.has(c)) return c; return pins().length % PIN_COLORS; }
-function addPin(x, y){ const p = { id: state.nextId++, x, y, name: nextPinName(), c: nextPinColor() }; pins().push(p); renderPins(); commit(); renamePin(p.id); return p.id; }
-function deletePin(id){ if (finishRename) finishRename(false); const i = pins().findIndex(p => p.id === id); if (i < 0) return; pins().splice(i, 1); renderPins(); commit(); toast('Pin deleted. Undo brings it back.'); }
+function addPin(x, y){ const p = { id: state.nextId++, x, y, name: nextPinName(), c: nextPinColor() }; pins().push(p); renderPins(); commit(); selectPin(p.id); renamePin(p.id); return p.id; }
+function deletePin(id){ if (finishRename) finishRename(false); if (selPin === id) selPin = null; const i = pins().findIndex(p => p.id === id); if (i < 0) return; pins().splice(i, 1); renderPins(); commit(); toast('Pin deleted. Undo brings it back.'); }
 // The chip becomes a text field: Enter or blur saves, Esc keeps the name, empty keeps the old name
 let finishRename = null; // ends the rename in progress, if any: finishRename(save)
 function renamePin(id){
@@ -910,7 +921,7 @@ function renderLinks(extra){
   svg.setAttribute('width', w); svg.setAttribute('height', h); svg.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
 }
 function renderSel(){
-  updateStyleButtons();
+  updateStyleButtons(); markSelPin();
   for (const [id, el] of els){
     el.classList.toggle('sel', sel.boxes.has(id));
     el.classList.toggle('editing', editing === id);
@@ -1552,6 +1563,7 @@ window.addEventListener('keydown', e => {
   else if (mod && !e.shiftKey && !e.altKey && (k === 'c' || k === 'x' || k === 'v')) keyCopy(k);
   else if (mod && k === 'a'){ e.preventDefault(); setSel(state.boxes.map(b => b.id), state.links.map(l => l.id)); armed = null; renderSel(); }
   else if ((e.key === 'Delete' || e.key === 'Backspace') && hasSel()){ e.preventDefault(); deleteSel(); }
+  else if ((e.key === 'Delete' || e.key === 'Backspace') && selPin != null && pin(selPin)){ e.preventDefault(); deletePin(selPin); }
   else if (e.key === 'Enter' && onlyBox() != null){ e.preventDefault(); startEdit(box(onlyBox())); }
   else if (e.altKey && e.key === 'ArrowLeft'){ e.preventDefault(); goPlace(-1); }
   else if (e.altKey && e.key === 'ArrowRight'){ e.preventDefault(); goPlace(1); }
