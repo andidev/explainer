@@ -83,7 +83,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .box.target{border-color:var(--accent)}
 .box.flash{animation:flash .7s ease-out}
 @keyframes flash{0%{box-shadow:0 0 0 10px var(--accent-soft)}100%{box-shadow:0 0 0 3px var(--accent-soft)}}
-body.caps .txt{text-transform:uppercase;letter-spacing:.02em}
+body.caps .txt,body.caps .pin-name,body.caps .pname,body.caps .pname-edit{text-transform:uppercase;letter-spacing:.02em}
 .txt{width:100%;min-height:1.35em;text-align:center;font-size:16px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;outline:none;cursor:inherit;caret-color:var(--accent)}
 .box.editing .txt{cursor:text;user-select:text;-webkit-user-select:text}
 .h{position:absolute;width:11px;height:11px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--box);border:2px solid var(--accent);
@@ -855,6 +855,15 @@ function renamePin(id){
   chip.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   const name = chip.querySelector('.pname'), inp = document.createElement('input');
   inp.className = 'pname-edit'; inp.value = p.name; inp.setAttribute('aria-label', 'Pin name'); inp.maxLength = 40;
+  inp.setAttribute('autocapitalize', capAttr());
+  // Capitals (D-056): a lowercase letter typed at the start or after . ! ? becomes a capital, as in boxes
+  inp.addEventListener('beforeinput', ev => {
+    if (!autoCapOn() || ev.inputType !== 'insertText' || !ev.data || !/^\p{Ll}$/u.test(ev.data)) return;
+    const a = inp.selectionStart, b = inp.selectionEnd;
+    if (inp.value.length - (b - a) >= inp.maxLength) return; // full: let the browser refuse the key
+    if (!/(^|[.!?]\s+)$/.test(inp.value.slice(0, a))) return;
+    ev.preventDefault(); inp.setRangeText(ev.data.toUpperCase(), a, b, 'end');
+  });
   name.replaceWith(inp); inp.focus(); inp.select();
   let done = false;
   const finish = save => { if (done) return; done = true; if (finishRename === finish) finishRename = null; const v = inp.value.trim();

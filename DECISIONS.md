@@ -533,7 +533,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `.gh` link in `header`, header right padding.
 
 ### D-056: Capitals: All caps (default), Sentence case, As typed
-- Status: Amended by D-059
+- Status: Amended by D-059, D-066
 - Date: 2026-10-13
 - Amends: D-034
 - Decision: The former Auto-capitalise switch is a button that cycles through three modes, showing
@@ -634,7 +634,7 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Code: `newHeads`, `setNewHeads`, `headsFrom`, `explainer.newheads`, `currentSettings`/`applySettings`.
 
 ### D-063: Pins: named places to jump to
-- Status: Amended by D-064, D-065
+- Status: Amended by D-064, D-065, D-066
 - Date: 2026-10-13
 - Amends: D-057
 - Decision: A pin is a named, coloured place on the board that you can jump back to.
@@ -692,3 +692,15 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
   line, clicking empty board, undo/redo or Esc clears the pin selection.
 - Why: User asked to delete the selected pin with Backspace.
 - Code: `selPin`, `selectPin`, `markSelPin`, `setSel`, keydown handler, `.pin.sel`, `.pchip.sel`.
+
+### D-066: Pin names follow the Capitals setting
+- Status: Active
+- Date: 2026-10-13
+- Amends: D-056, D-063
+- Decision: Pin names follow the same Capitals mode as box text. In All caps the name shows in
+  capitals on the marker, the chip and the rename field, but is stored as typed, so switching
+  mode restores it. In All caps and Sentence case, a lowercase letter typed at the start of the
+  name or after `.`, `!` or `?` becomes a capital; As typed leaves it alone. The rename field also
+  sets `autocapitalize` for on-screen keyboards.
+- Why: User asked that pins follow the capitalisation setting.
+- Code: `body.caps .pin-name, .pname, .pname-edit`; `renamePin` (`beforeinput`, `capAttr`, `autoCapOn`).
