@@ -42,6 +42,7 @@ resize. Text shows in capitals by default; **Capitals**, in the ☰ menu, switch
 
 **Connect.** Move toward the edge of a box and the nearest connection dot appears. Drag it onto
 another box. Lines find their own way around other boxes, and you can choose angled or curved lines.
+Double-click a line to write on it; if the text needs more room, the boxes in its way slide aside.
 The island at the top centre sets the style and arrowheads of new lines.
 Hold Shift as you drop it for a plain line without an arrow, or Shift+Ctrl for arrows at both ends.
 (Double-clicking a dot before dragging also gives a line without an arrow.)
@@ -76,6 +77,7 @@ Right-click a pin (long-press on touch) to rename or delete it, or click it and 
 | Delete the box you're typing in, when it's empty | Backspace or Delete |
 | Plain line / arrows both ways | Hold Shift / Shift+Ctrl while dropping a line |
 | Change a selected line (style, arrowheads, reverse) | Use the toolbar above it |
+| Write on a line | Double-click it |
 | Add a pin | Drag or click 📍 |
 | Jump to a pin, showing the boxes near it (and select it) | Click it |
 | Delete the selected pin | Backspace or Delete |

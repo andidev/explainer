@@ -740,3 +740,20 @@ Active decision is a bug. Read it before changing behaviour, and update it in th
 - Why: User showed two related boxes about 9 grid cells (~200px) apart that were left out of the
   pin's group; one box-width was too tight for how people space their diagrams.
 - Code: `NEAR`.
+
+### D-070: Text on lines
+- Status: Active
+- Date: 2026-10-23
+- Decision: Double-clicking a line (or its text) lets you write on it. The text sits centred on
+  the middle of the line, on a patch of board colour that breaks the line behind it; it wraps
+  at 220px and follows the Capitals setting. Enter, Esc or clicking elsewhere finishes (Shift+Enter
+  adds a line break); clearing the text removes it. Clicking the text selects its line. While you
+  type, any box the text (plus 8px) would cover slides straight away from it, just far enough to
+  clear it: the two boxes the line joins move along the line, making it longer; other boxes take
+  the shorter way out. Lines follow, and moves snap to the grid when snap is on. Typing and the
+  moves it causes undo together. Line text travels in share links as an optional 8th element of
+  each packed line (older versions ignore it) and is kept by copy and paste.
+- Why: User asked to write text on arrows, and for boxes in the way to move when the text
+  doesn't fit; asked, they chose text on the line and pushing every overlapping box.
+- Code: `renderLabels`, `makeLabel`, `editLabel`, `endLabelEdit`, `makeRoom`, `autoCapBefore`,
+  `#lblLayer`, `.lbl`; link field `text`; `boardOnly`/`unpack`; `pasteClip`.

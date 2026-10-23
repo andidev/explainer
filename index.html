@@ -71,6 +71,13 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #links .ah{fill:var(--line)} #links .ah-sel{fill:var(--accent)}
 #links .tmp{stroke:var(--accent);stroke-width:2;fill:none;stroke-linecap:round}
 #layer{position:absolute;left:0;top:0;z-index:2}
+/* Line text: centred on the middle of the line, on a patch of board colour that breaks the line */
+#lblLayer{position:absolute;left:0;top:0;z-index:1}
+.lbl{position:absolute;transform:translate(-50%,-50%);max-width:220px;width:max-content;padding:1px 6px;background:var(--paper);color:var(--ink);font-size:13px;line-height:1.35;text-align:center;
+  white-space:pre-wrap;overflow-wrap:anywhere;border-radius:4px;cursor:pointer;outline:none;caret-color:var(--accent)}
+.lbl.sel{color:var(--accent)}
+.lbl.editing{cursor:text;background:var(--box);box-shadow:0 0 0 1px var(--accent);user-select:text;-webkit-user-select:text;min-width:24px;min-height:1.35em}
+body.caps .lbl{text-transform:uppercase;letter-spacing:.02em}
 
 .box{position:absolute;box-sizing:border-box;display:flex;align-items:center;justify-content:center;
   padding:12px;background:var(--box);border:1.5px solid var(--ink);border-radius:7px;cursor:grab;z-index:0;
@@ -344,6 +351,7 @@ body.help-open .wl-help{display:none}
       <g id="linkG"></g>
       <path id="tmp" class="tmp" d=""/>
     </svg>
+    <div id="lblLayer"></div>
     <div id="layer"></div>
     <div id="pinLayer"></div>
   </div>
@@ -379,6 +387,7 @@ body.help-open .wl-help{display:none}
     <dt><kbd class="mod">Ctrl</kbd> <kbd>Z</kbd></dt><dd>Undo</dd>
     <dt><kbd>⇧</kbd> <kbd class="mod">Ctrl</kbd> <kbd>Z</kbd></dt><dd>Redo</dd>
     <dt>Hover a line, drag</dt><dd>New line from its end</dd>
+    <dt>Double-click a line</dt><dd>Write on it</dd>
     <dt>Drag or click 📍</dt><dd>Add a pin</dd>
     <dt>Click a pin</dt><dd>Show it and the boxes near it</dd>
     <dt>Drag a pin chip onto the board</dt><dd>Move the pin</dd>
@@ -431,7 +440,7 @@ function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch
 
 /* ---------- board in the URL (compressed, like Mermaid's share links) ---------- */
 // The whole board is packed into a compact array, deflated, and base64url-encoded into the #hash.
-const boardOnly = s => [s.nextId, s.boxes.map(b => [b.id, b.x, b.y, b.w, b.h, b.text]), s.links.map(l => [l.id, l.from, l.fa, l.to, l.ta, l.back ? 2 : l.arrow ? 1 : 0, l.curve ? 1 : 0])];
+const boardOnly = s => [s.nextId, s.boxes.map(b => [b.id, b.x, b.y, b.w, b.h, b.text]), s.links.map(l => [l.id, l.from, l.fa, l.to, l.ta, l.back ? 2 : l.arrow ? 1 : 0, l.curve ? 1 : 0, ...(l.text ? [l.text] : [])])]; // text is optional, so older versions still read links
 const pinsPacked = s => (s.pins || []).map(p => [p.id, p.x, p.y, p.name, p.c]);
 const sameBoard = (a, b) => JSON.stringify(boardOnly(a)) === JSON.stringify(boardOnly(b)) && JSON.stringify(pinsPacked(a)) === JSON.stringify(pinsPacked(b));
 // Every setting travels with the board: theme, snap, capitals, line style, shortcuts panel
@@ -443,7 +452,7 @@ function unpack(str){
   const a = JSON.parse(str); if (!Array.isArray(a) || a[0] !== 1) return null;
   const r = { nextId: a[1], example: false, settings: a[4] && typeof a[4] === 'object' ? a[4] : null,
     boxes: a[2].map(([id, x, y, w, h, text]) => ({ id, x, y, w, h, text: String(text) })),
-    links: a[3].filter(l => A[l[2]] && A[l[4]]).map(([id, from, fa, to, ta, ar, cv]) => ({ id, from, fa, to, ta, arrow: !!ar, back: ar === 2, curve: !!cv })),
+    links: a[3].filter(l => A[l[2]] && A[l[4]]).map(([id, from, fa, to, ta, ar, cv, tx]) => ({ id, from, fa, to, ta, arrow: !!ar, back: ar === 2, curve: !!cv, ...(typeof tx === 'string' && tx.trim() ? { text: tx.slice(0, 200) } : {}) })),
     pins: Array.isArray(a[5]) ? a[5].filter(p => Array.isArray(p) && Number.isInteger(p[0]) && isFinite(p[1]) && isFinite(p[2])).map(([id, x, y, name, c]) => ({ id, x: +x, y: +y, name: String(name || 'Pin').slice(0, 60), c: ((c|0) % 8 + 8) % 8 })) : [] };
   // one pin per id (first wins), and new ids always start above every pin id
   const seen = new Set(); r.pins = r.pins.filter(p => !seen.has(p.id) && seen.add(p.id));
@@ -733,6 +742,14 @@ viewport.addEventListener('scroll', () => { viewport.scrollTop = 0; viewport.scr
 viewport.addEventListener('contextmenu', e => e.preventDefault());
 
 /* ---------- rendering ---------- */
+// Auto-capitalise: a lowercase letter typed at the start of the text, a line, or a sentence. True if handled.
+function autoCapBefore(e, t){
+  if (!(autoCapOn() && e.inputType === 'insertText' && e.data && /^\p{Ll}$/u.test(e.data))) return false;
+  const sl = getSelection(); if (!sl.rangeCount) return false;
+  const r = document.createRange(); r.selectNodeContents(t); r.setEnd(sl.getRangeAt(0).startContainer, sl.getRangeAt(0).startOffset);
+  if (!/(^|[.!?]\s+|\n\s*)$/.test(r.toString())) return false;
+  e.preventDefault(); document.execCommand('insertText', false, e.data.toUpperCase()); return true;
+}
 function makeEl(b){
   const el = document.createElement('div'); el.className = 'box'; el.dataset.id = b.id;
   const t = document.createElement('div'); t.className = 'txt'; t.spellcheck = false; t.textContent = b.text;
@@ -746,14 +763,7 @@ function makeEl(b){
     clearTimeout(typeTimer); typeTimer = setTimeout(commit, TYPE_PAUSE); // each pause in typing = one undo step
   });
   t.addEventListener('beforeinput', e => {
-    // Auto-capitalise: a lowercase letter typed at the start of the box, a line, or a sentence
-    if (autoCapOn() && e.inputType === 'insertText' && e.data && /^\p{Ll}$/u.test(e.data)){
-      const sl = getSelection();
-      if (sl.rangeCount){
-        const r = document.createRange(); r.selectNodeContents(t); r.setEnd(sl.getRangeAt(0).startContainer, sl.getRangeAt(0).startOffset);
-        if (/(^|[.!?]\s+|\n\s*)$/.test(r.toString())){ e.preventDefault(); document.execCommand('insertText', false, e.data.toUpperCase()); return; }
-      }
-    }
+    if (autoCapBefore(e, t)) return;
     if (e.inputType === 'historyUndo'){ e.preventDefault(); undo(); }
     else if (e.inputType === 'historyRedo'){ e.preventDefault(); redo(); }
   });
@@ -942,7 +952,7 @@ function renderLinks(extra){
     const c = linkGeom(a, l.fa, b, l.ta, l.curve); pts.push(...c.pts);
     const d = c.d, on = sel.links.has(l.id);
     const m = `url(#${on?'ahs':'ah'})`;
-    s += `<path class="ln${on?' sel':''}" d="${d}"${l.arrow ? ` marker-end="${m}"` : ''}${l.back ? ` marker-start="${m}"` : ''}/>`
+    s += `<path class="ln${on?' sel':''}" data-link="${l.id}" d="${d}"${l.arrow ? ` marker-end="${m}"` : ''}${l.back ? ` marker-start="${m}"` : ''}/>`
        + `<path class="hit" data-link="${l.id}" d="${d}"/>`;
   }
   linkG.innerHTML = s;
@@ -951,6 +961,83 @@ function renderLinks(extra){
   const x = Math.floor(r.x - 40), y = Math.floor(r.y - 40), w = Math.ceil(r.w + 80), h = Math.ceil(r.h + 80);
   svg.style.left = x+'px'; svg.style.top = y+'px';
   svg.setAttribute('width', w); svg.setAttribute('height', h); svg.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
+  renderLabels();
+}
+/* ---------- line text ---------- */
+// Labels are kept as elements (keyed by line id) so one being typed in survives re-renders
+const lblEls = new Map(); let lblEditing = null;
+const linkById = id => state.links.find(l => l.id === id);
+function renderLabels(){
+  const L = $('lblLayer'); if (!L) return;
+  const seen = new Set();
+  for (const p of linkG.querySelectorAll('.ln[data-link]')){
+    const id = +p.dataset.link, l = linkById(id);
+    if (!l || !(l.text || lblEditing === id)) continue;
+    seen.add(id);
+    let el = lblEls.get(id);
+    if (!el){ el = makeLabel(id); L.appendChild(el); lblEls.set(id, el); }
+    if (lblEditing !== id && el.textContent !== (l.text || '')) el.textContent = l.text || '';
+    const m = p.getPointAtLength(p.getTotalLength()/2); // halfway along the drawn line, whatever its shape
+    el.style.left = m.x + 'px'; el.style.top = m.y + 'px';
+    el.classList.toggle('sel', sel.links.has(id));
+  }
+  for (const [id, el] of lblEls) if (!seen.has(id)){ el.remove(); lblEls.delete(id); }
+}
+function makeLabel(id){
+  const el = document.createElement('div'); el.className = 'lbl'; el.dataset.link = id; el.spellcheck = false;
+  el.setAttribute('autocapitalize', capAttr());
+  el.addEventListener('input', () => {
+    const l = linkById(id); if (!l || lblEditing !== id) return;
+    l.text = readText(el); renderLinks(); makeRoom(id); save();
+    clearTimeout(typeTimer); typeTimer = setTimeout(commit, TYPE_PAUSE); // each pause in typing = one undo step
+  });
+  el.addEventListener('beforeinput', e => autoCapBefore(e, el));
+  el.addEventListener('blur', () => { if (lblEditing === id) endLabelEdit(); });
+  return el;
+}
+// Double-click a line or its text: type on the line (empty text removes it)
+function editLabel(id){
+  if (!linkById(id)) return;
+  if (editing) endEdit();
+  if (lblEditing != null && lblEditing !== id) endLabelEdit();
+  lblEditing = id; setSel([], [id]); armed = null; renderSel();
+  const el = lblEls.get(id); if (!el) return;
+  el.contentEditable = CE; el.classList.add('editing'); el.setAttribute('autocapitalize', capAttr()); el.focus({ preventScroll:true });
+  const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  positionSelbar();
+}
+function endLabelEdit(){
+  const id = lblEditing; if (id == null) return; lblEditing = null;
+  const el = lblEls.get(id), l = linkById(id);
+  if (el){ el.contentEditable = 'false'; el.classList.remove('editing'); }
+  if (l){ const v = el ? readText(el).trim() : ''; if (v) l.text = v; else delete l.text; }
+  getSelection().removeAllRanges(); renderLinks(); commit(); positionSelbar();
+}
+// Text that no longer fits pushes the boxes it would cover straight away from it, just far enough
+// to clear it (plus a small margin). Lines follow, so repeat until nothing overlaps.
+const roundAway = d => snap ? Math.sign(d)*Math.ceil(Math.abs(d)/G)*G : Math.round(d);
+function makeRoom(id){
+  for (let pass = 0; pass < 8; pass++){
+    const el = lblEls.get(id); if (!el) return;
+    const r = el.getBoundingClientRect(), vr = viewport.getBoundingClientRect(), M = 8;
+    const x0 = (r.left - vr.left - view.x)/view.z - M, y0 = (r.top - vr.top - view.y)/view.z - M;
+    const x1 = (r.right - vr.left - view.x)/view.z + M, y1 = (r.bottom - vr.top - view.y)/view.z + M;
+    const cx = (x0 + x1)/2, cy = (y0 + y1)/2, l = linkById(id); let moved = false;
+    for (const b of state.boxes){
+      const ox = Math.min(x1, b.x + b.w) - Math.max(x0, b.x), oy = Math.min(y1, b.y + b.h) - Math.max(y0, b.y);
+      if (ox <= 0 || oy <= 0) continue;
+      const dx = roundAway(b.x + b.w/2 >= cx ? x1 - b.x : x0 - (b.x + b.w)), dy = roundAway(b.y + b.h/2 >= cy ? y1 - b.y : y0 - (b.y + b.h));
+      // A box the line joins moves along the line (back from the side the line leaves it), so the line
+      // gets longer instead of the text travelling with it. Any other box takes the smaller way out.
+      const k = l && (b.id === l.from ? l.fa : b.id === l.to ? l.ta : null);
+      let alongX = ox <= oy;
+      if (k){ const [nx, ny] = NRM[k]; alongX = nx && ny ? ox <= oy : !!nx; }
+      if (alongX) b.x += dx; else b.y += dy;
+      const be = els.get(b.id); if (be) place(be, b); moved = true;
+    }
+    if (!moved) return;
+    renderLinks();
+  }
 }
 function renderSel(){
   updateStyleButtons(); markSelPin();
@@ -1160,6 +1247,7 @@ function diff(a, b){
   return { rect: bounds(rects), ids };
 }
 function restore(i){
+  if (lblEditing != null){ const el = lblEls.get(lblEditing); lblEditing = null; if (el){ el.contentEditable = 'false'; el.classList.remove('editing'); } } // undo/redo drops line typing
   if (finishRename) finishRename(false); // an unfinished pin rename is dropped, not saved onto the old state
   const wasEditing = editing;
   if (editing){ const b = box(editing), el = els.get(editing); if (b && el) el.firstChild.contentEditable = 'false'; editing = null; getSelection().removeAllRanges(); }
@@ -1234,6 +1322,13 @@ viewport.addEventListener('pointerdown', e => {
   if (e.target.closest('.isl, #menu, #help, #helpBtn')) return;
   const pm = e.target.closest && e.target.closest('.pin');
   if (pm && !spaceDown && (e.button === 0 || e.button === 2)){ e.preventDefault(); e.stopPropagation(); return downPin(e, +pm.dataset.pin); }
+  const lb = e.target.closest && e.target.closest('.lbl');
+  if (lb && !spaceDown && e.button === 0){ const lid = +lb.dataset.link;
+    if (lblEditing === lid) return; // place the caret like a normal text field
+    e.preventDefault(); endEdit(); if (lblEditing != null) endLabelEdit(); focusBoard(); armed = null;
+    if (e.shiftKey){ sel.links.has(lid) ? sel.links.delete(lid) : sel.links.add(lid); } else setSel([], [lid]);
+    renderSel(); return; }
+  if (lblEditing != null) endLabelEdit();
   if (e.button === 1 || e.button === 2 || (spaceDown && e.button === 0)) return startPan(e);
   if (e.button !== 0) return;
   const h = e.target.closest('.h'), bx = e.target.closest('.box'), hit = e.target.closest('.hit');
@@ -1352,7 +1447,7 @@ window.addEventListener('blur', () => cancelGesture());
 document.addEventListener('visibilitychange', () => { if (document.hidden) cancelGesture(); });
 // No native drag-and-drop or text selection outside the box being edited
 document.addEventListener('dragstart', e => e.preventDefault());
-document.addEventListener('selectstart', e => { if (!(editing && e.target.closest && e.target.closest('.box.editing'))) e.preventDefault(); });
+document.addEventListener('selectstart', e => { if (!(e.target.closest && e.target.closest('.box.editing, .lbl.editing'))) e.preventDefault(); });
 let capId = null;
 
 // While drawing, moving or connecting near the edge, the canvas keeps scrolling
@@ -1503,6 +1598,8 @@ viewport.addEventListener('dblclick', e => {
   // Pointer capture retargets click events to the board, so look up what is really under the pointer
   const under = document.elementFromPoint(e.clientX, e.clientY) || e.target;
   if (under.closest('.pin')) return;
+  const ln = under.closest('.lbl, .hit');
+  if (ln && !e.shiftKey){ e.preventDefault(); editLabel(+ln.dataset.link); return; }
   const bx = under.closest('.box'), h = under.closest('.h');
   if (!bx){ if (!under.closest('.hit') && !under.closest('.isl, #menu, #help, #helpBtn') && !spaceDown){ e.preventDefault(); newBoxAt(pt(e), sizeFor(e)); } return; }
   if (e.shiftKey || e.metaKey || e.ctrlKey) return; // Cmd/Ctrl+click connects; a quick second click must not start editing
@@ -1573,6 +1670,11 @@ function downHandle(e, id, k, exact = true, linkId = null){
 window.addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('.pname-edit')) return;
   const mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase();
+  if (lblEditing != null && e.target.closest && e.target.closest('.lbl')){ // typing on a line
+    if (e.key === 'Escape' || (e.key === 'Enter' && !e.shiftKey)){ e.preventDefault(); endLabelEdit(); focusBoard(); }
+    else if (mod && (k === 'z' || k === 'y')){ e.preventDefault(); endLabelEdit(); (k === 'y' || e.shiftKey) ? redo() : undo(); }
+    return;
+  }
   // Undo/redo work everywhere, including while typing in a box
   if (mod && k === 'z'){ e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
   if (mod && k === 'y'){ e.preventDefault(); redo(); return; }
@@ -1646,6 +1748,7 @@ function pasteClip(c){
   const nl = [];
   for (const l of c.links){ if (!ids.has(l.from) || !ids.has(l.to) || !A[l.fa] || !A[l.ta]) continue;
     const x = { id: state.nextId++, from: ids.get(l.from), fa: l.fa, to: ids.get(l.to), ta: l.ta, arrow: !!l.arrow, curve: !!l.curve };
+    if (l.text) x.text = String(l.text);
     if (l.back) x.back = true; state.links.push(x); nl.push(x.id); }
   setSel([...ids.values()], nl); armed = null; renderAll(); commit();
 }

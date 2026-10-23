@@ -22,7 +22,7 @@ It describes how the app must behave.
 
 ## Code map (index.html)
 
-- State: `state = { nextId, boxes:[{id,x,y,w,h,text}], links:[{id,from,fa,to,ta,arrow,curve}], pins:[{id,x,y,name,c}] }`.
+- State: `state = { nextId, boxes:[{id,x,y,w,h,text}], links:[{id,from,fa,to,ta,arrow,back,curve,text}], pins:[{id,x,y,name,c}] }`.
   Anchors (`fa`/`ta`) are keys of `A`: nw, n, ne, e, se, s, sw, w.
 - History: `commit()` snapshots `state` for undo/redo; call it after every user-visible change.
 - Gestures: viewport `pointerdown` dispatches to `downCanvas`, `downBox`, `downHandle`, `startPan`;
