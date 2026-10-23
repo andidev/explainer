@@ -965,7 +965,7 @@ function renderLinks(extra){
 }
 /* ---------- line text ---------- */
 // Labels are kept as elements (keyed by line id) so one being typed in survives re-renders
-const lblEls = new Map(); let lblEditing = null;
+const lblEls = new Map(); let lblEditing = null, lastLinePress = {};
 const linkById = id => state.links.find(l => l.id === id);
 function renderLabels(){
   const L = $('lblLayer'); if (!L) return;
@@ -1344,6 +1344,11 @@ viewport.addEventListener('pointerdown', e => {
   if (bx) return downBox(e, +bx.dataset.id);
   if (hit){
     e.preventDefault(); endEdit(); focusBoard(); armed = null; const lid = +hit.dataset.link;
+    // A second press on the same line is a double-click: write on it. (Selecting the line redraws the
+    // lines, so the browser's own dblclick never fires on a real double-click.)
+    const now = performance.now(), lp = lastLinePress;
+    lastLinePress = { id: lid, t: now, x: e.clientX, y: e.clientY };
+    if (!e.shiftKey && lp.id === lid && now - lp.t < 450 && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) < 8){ lastLinePress = {}; editLabel(lid); return; }
     if (e.shiftKey){ sel.links.has(lid) ? sel.links.delete(lid) : sel.links.add(lid); } else setSel([], [lid]);
     renderSel(); return;
   }
@@ -1654,7 +1659,13 @@ function downHandle(e, id, k, exact = true, linkId = null){
         set.has(v) ? set.delete(v) : set.add(v); renderSel(); return; }
       if (!exact){ // a plain click near a dot selects the box, or the line if it started on one
         lastHandle = { key:'', t:0 };
-        if (linkId != null) setSel([], [linkId]);
+        if (linkId != null){
+          // A second click on the same line is a double-click: write on it (D-070)
+          const t = performance.now(), lp = lastLinePress, x = ev ? ev.clientX : 0, y = ev ? ev.clientY : 0;
+          lastLinePress = { id: linkId, t, x, y };
+          if (lp.id === linkId && t - lp.t < 450 && Math.hypot(x - lp.x, y - lp.y) < 8){ lastLinePress = {}; editLabel(linkId); return; }
+          setSel([], [linkId]);
+        }
         renderSel(); return; } // a plain click near a dot just selects the box
       if (quick){
         armed = armed === key ? null : key; lastHandle = { key:'', t:0 }; renderSel();
